@@ -1254,51 +1254,30 @@ static int _actor_cloud_damage(const actor *act,
     case CLOUD_SPECTRAL:
     case CLOUD_ACID:
     case CLOUD_NEGATIVE_ENERGY:
+    case CLOUD_STORM:
         final_damage =
             _cloud_damage_output(act, _cloud2beam(cloud.type),
                                  cloud_base_damage,
                                  maximum_damage);
         break;
-    case CLOUD_STORM:
+    default:
+        break;
+    }
+
+    if (cloud.type == CLOUD_STORM)
     {
-
-        // if we don't have thunder, there's always rain
-        cloud_struct raincloud = cloud;
-        raincloud.type = CLOUD_RAIN;
-        const int rain_damage = _actor_cloud_damage(act, raincloud,
-                                                    maximum_damage);
-
-        // if this isn't just a test run, and no time passed, don't trigger
-        // lightning. (just rain.)
-        if (!maximum_damage && !(you.turn_is_over && you.time_taken > 0))
-            return rain_damage;
-
-        // only announce ourselves if this isn't a test run.
-        if (!maximum_damage)
-            cloud.announce_actor_engulfed(act);
-
-        const int turns_per_lightning = 3;
-        const int aut_per_lightning = turns_per_lightning * BASELINE_DELAY;
-
-        // if we fail our lightning roll, again, just rain.
-        if (!maximum_damage && !x_chance_in_y(you.time_taken,
-                                              aut_per_lightning))
-        {
-            return rain_damage;
-        }
-
-        const int lightning_dam = _cloud_damage_output(act,
-                                                       _cloud2beam(cloud.type),
-                                                       cloud_base_damage,
-                                                       maximum_damage);
-
         if (maximum_damage)
         {
-            // Average maximum damage over time.
-            const int avg_dam = lightning_dam / turns_per_lightning;
+            const int avg_dam = final_damage / turns_per_lightning;
             if (avg_dam > 0)
                 return avg_dam;
-            return rain_damage; // vs relec+++ or w/e
+        }
+        if (!_lightning_strikes() || maximum_damage)
+        {
+            // if we don't have thunder, there's always rain
+            cloud_struct raincloud = cloud;
+            raincloud.type = CLOUD_RAIN;
+            return _actor_cloud_damage(act, raincloud, maximum_damage);
         }
 
         if (act->is_player())
@@ -1313,12 +1292,6 @@ static int _actor_cloud_damage(const actor *act,
             mpr("Lightning from the thunderstorm strikes something you cannot "
                 "see.");
         }
-
-        return lightning_dam;
-
-    }
-    default:
-        break;
     }
 
     return timescale_damage(act, final_damage);
