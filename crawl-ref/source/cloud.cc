@@ -1229,17 +1229,10 @@ static int _cloud_damage_output(const actor *actor,
 
 static bool _lightning_strikes()
 {
-    // if this isn't just a test run, and no time passed, don't trigger
-    // lightning. (just rain.)
-    if ( !(you.turn_is_over && you.time_taken > 0))
-        return false;
-
     const int turns_per_lightning = 3;
-    // if we fail our lightning roll, again, just rain.
-    if (!one_chance_in(turns_per_lightning))
-        return false;
-
-    return true;
+    return you.turn_is_over
+        && you.time_taken > 0
+        && one_chance_in(turns_per_lightning);
 }
 
 /**
