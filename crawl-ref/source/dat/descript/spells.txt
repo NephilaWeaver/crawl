@@ -857,6 +857,11 @@ when something moves into them or when they're exposed to open flames. The
 explosion is concussive, knocking adjacent creatures away. Damage done rises
 with the spell's power.
 %%%%
+Leda's Deliquescence spell
+
+Fires a blast of high-speed entropy. Slain victims dissolve into mud, slowing
+the movements and impairing the attacks of creatures stuck within.
+%%%%
 Leda's Liquefaction spell
 
 Liquefies the ground around the caster, making it difficult to move through.
