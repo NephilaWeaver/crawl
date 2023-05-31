@@ -317,6 +317,113 @@ static bool _box_of_beasts()
     return true;
 }
 
+static bool _place_webs()
+{
+    bool webbed = false;
+    const int evo_skill = you.skill(SK_EVOCATIONS);
+    // Also generate webs on hostile monsters and trap them.
+    const int rad = LOS_DEFAULT_RANGE / 2 + 2;
+    for (monster_near_iterator mi(you.pos(), LOS_SOLID); mi; ++mi)
+    {
+        trap_def *trap = trap_at((*mi)->pos());
+        // Don't destroy non-web traps or try to trap monsters
+        // currently caught by something.
+        if (you.pos().distance_from((*mi)->pos()) > rad
+            || (!trap && env.grid((*mi)->pos()) != DNGN_FLOOR)
+            || (trap && trap->type != TRAP_WEB)
+            || (*mi)->friendly()
+            || (*mi)->caught())
+        {
+            continue;
+        }
+
+        // web chance increases with proximity & evo skill
+        // code here uses double negatives; sorry! i blame the other guy
+        // don't try to make surge affect web chance; too messy.
+        const int web_dist_factor
+            = 100 * (you.pos().distance_from((*mi)->pos()) - 1) / rad;
+        const int web_skill_factor = 2 * (27 - evo_skill);
+        const int web_chance = 100 - web_dist_factor - web_skill_factor;
+        if (!x_chance_in_y(web_chance, 100))
+            continue;
+
+        if (trap && trap->type == TRAP_WEB)
+            destroy_trap((*mi)->pos());
+
+        place_specific_trap((*mi)->pos(), TRAP_WEB, 1); // 1 ammo = temp
+        // Reveal the trap
+        env.grid((*mi)->pos()) = DNGN_TRAP_WEB;
+        trap = trap_at((*mi)->pos());
+        trap->trigger(**mi);
+        webbed = true;
+    }
+    return webbed;
+}
+
+// TODO: revise
+static const vector<pop_entry> pop_spiders =
+{ // Sack of Spiders
+  {  0,  13,   40, FALL, MONS_SCORPION },
+  {  6,  19,   80, PEAK, MONS_REDBACK},
+  {  8,  27,   90, PEAK, MONS_REDBACK },
+  { 10,  27,   10, SEMI, MONS_ORB_SPIDER },
+  { 12,  29,  100, PEAK, MONS_JUMPING_SPIDER },
+  { 13,  29,  110, PEAK, MONS_TARANTELLA },
+  { 15,  29,  120, PEAK, MONS_WOLF_SPIDER },
+  { 21,  27,   18, RISE, MONS_GHOST_MOTH },
+    // culicivora
+    // demonic crawler
+    // steelbarb worm
+    // sun moth
+    // broodmother
+  { 0,0,0,FLAT,MONS_0 }
+};
+
+static bool _sack_of_spiders_veto_mon(monster_type mon)
+{
+   // Don't summon any beast that would anger your god.
+    return god_hates_monster(mon);
+}
+
+static bool _spill_out_spiders()
+{
+    const int evo_skill = you.skill(SK_EVOCATIONS);
+    int count = random_range(1,2) + random2(div_rand_round(evo_skill * 10, 30));
+    bool made_mons = false;
+    for (int n = 0; n < count; n++)
+    {
+        // Invoke mon-pick with our custom list
+        monster_type mon = pick_monster_from(pop_spiders, evo_skill,
+                                             _sack_of_spiders_veto_mon);
+        mgen_data mg(mon, BEH_FRIENDLY, you.pos(), MHITYOU, MG_AUTOFOE);
+        mg.set_summoned(&you, 3 + random2(4), 0);
+        if (create_monster(mg))
+            made_mons = true;
+    }
+    return made_mons;
+}
+
+static bool _sack_of_spiders()
+{
+    mpr("You reach into the sack...");
+
+    const bool made_mons = !you.allies_forbidden() && _spill_out_spiders();
+    if (made_mons)
+        mpr("...and things crawl out!");
+
+    const bool webbed = _place_webs();
+    if (!made_mons && !webbed)
+    {
+        mpr("...but nothing happens.");
+        return false;
+    }
+
+    if (!made_mons)
+        mpr("...but only cobwebs fall out.");
+    return true;
+}
+
+
 static bool _make_zig(item_def &zig)
 {
     if (feat_is_critical(env.grid(you.pos()))
@@ -1115,11 +1222,17 @@ bool evoke_item(int slot, dist *preselect)
             }
             break;
 
-#if TAG_MAJOR_VERSION == 34
         case MISC_SACK_OF_SPIDERS:
-            canned_msg(MSG_NOTHING_HAPPENS);
+            if (_sack_of_spiders())
+            {
+                expend_xp_evoker(item.sub_type);
+                if (!evoker_charges(item.sub_type))
+                    mpr("The sack is emptied!");
+                practise_evoking(1);
+            }
             return false;
 
+#if TAG_MAJOR_VERSION == 34
         case MISC_CRYSTAL_BALL_OF_ENERGY:
             canned_msg(MSG_NOTHING_HAPPENS);
             return false;
