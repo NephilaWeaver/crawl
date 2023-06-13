@@ -7397,6 +7397,10 @@ bool player::shaftable(bool check_terrain) const
 // different effect from the player invokable ability.
 bool player::do_shaft(bool check_terrain)
 {
+    // disabled in ironman mode
+    if (crawl_state.game_is_ironman())
+        return false;
+
     if (!shaftable(check_terrain)
         || resists_dislodge("falling into an unexpected shaft"))
     {
