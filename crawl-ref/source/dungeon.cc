@@ -2216,10 +2216,10 @@ static bool _add_connecting_escape_hatches()
         return true;
 
     // Veto D:1 or Pan if there are disconnected areas.
-    // Veto any ironman level with disconnected areas
+    // Veto any  non-abyss ironman level with disconnected areas
     if (player_in_branch(BRANCH_PANDEMONIUM)
-        || crawl_state.game_is_ironman()
-        || (player_in_branch(BRANCH_DUNGEON) && you.depth == 1))
+        || (player_in_branch(BRANCH_DUNGEON) && you.depth == 1)
+        || (crawl_state.game_is_ironman() && !player_in_branch(BRANCH_ABYSS)))
     {
         // Allow == 0 in case the entire level is one opaque vault.
         return dgn_count_disconnected_zones(false) <= 1;
