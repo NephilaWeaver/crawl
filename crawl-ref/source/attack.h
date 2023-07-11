@@ -199,6 +199,7 @@ protected:
 
 private:
     actor &stat_source() const;
+    void apply_glow() const;
 };
 
 string attack_strength_punctuation(int dmg);

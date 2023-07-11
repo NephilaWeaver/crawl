@@ -316,6 +316,7 @@ bool is_weapon_brand_ok(int type, int brand, bool /*strict*/)
     case SPWPN_FREEZING:
     case SPWPN_DRAINING:
     case SPWPN_ANTIMAGIC:
+    case SPWPN_THAUM:
         break;
 
     // Melee-only brands.

@@ -9,6 +9,7 @@
 #define MAX_ENCH_DEGREE_ABJURATION  6
 
 #define SIMULACRUM_POWER_KEY "simulacrum power"
+#define GLOW_DAMAGE_KEY "glow_damage"
 
 class actor;
 class monster;

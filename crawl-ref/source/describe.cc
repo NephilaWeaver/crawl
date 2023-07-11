@@ -1243,6 +1243,7 @@ static string _describe_brand(brand_type brand)
     case SPWPN_CHAOS:
     case SPWPN_DISTORTION:
     case SPWPN_DRAINING:
+    case SPWPN_THAUM:
     case SPWPN_ELECTROCUTION:
     case SPWPN_FLAMING:
     case SPWPN_FREEZING:
@@ -1565,6 +1566,10 @@ static string _describe_weapon_brand(const item_def &item)
                "an additional one-quarter of any damage that pierces "
                "defenders' armour as well as a flat 2-4 damage, and also "
                "weakens them slightly. A truly terrible weapon...";
+    case SPWPN_THAUM:
+        return "It contaminates the victim with mutagenic glow. A few such "
+               "hits will cause a meltdown, malmutating the victim and dealing "
+               "an additional one-sixth of the weapon's damage.";
     case SPWPN_SPEED:
         return "Attacks with this weapon are significantly faster.";
     case SPWPN_HEAVY:

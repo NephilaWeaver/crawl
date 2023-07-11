@@ -3105,6 +3105,7 @@ static void _rebrand_weapon(item_def& wpn)
                                                3, SPWPN_DRAINING,
                                                3, SPWPN_HEAVY,
                                                1, SPWPN_ELECTROCUTION,
+                                               1, SPWPN_THAUM,
                                                1, SPWPN_CHAOS);
         }
         else
@@ -3116,6 +3117,7 @@ static void _rebrand_weapon(item_def& wpn)
                                                2, SPWPN_PROTECTION,
                                                1, SPWPN_DRAINING,
                                                1, SPWPN_ELECTROCUTION,
+                                               1, SPWPN_THAUM,
                                                1, SPWPN_SPECTRAL,
                                                1, SPWPN_VAMPIRISM,
                                                1, SPWPN_CHAOS);
@@ -3182,6 +3184,11 @@ static void _brand_weapon(item_def &wpn)
     case SPWPN_ELECTROCUTION:
         flash_colour = LIGHTCYAN;
         mprf("%s crackles with electricity.", itname.c_str());
+        break;
+
+    case SPWPN_THAUM:
+        flash_colour = LIGHTMAGENTA;
+        mprf("%s pulses with uncontained magical radiation.", itname.c_str());
         break;
 
     case SPWPN_CHAOS:

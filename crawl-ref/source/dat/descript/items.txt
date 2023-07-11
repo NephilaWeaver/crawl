@@ -1096,10 +1096,10 @@ not be chosen. Artefacts cannot be branded in this way.
 
 Melee weapons will commonly be branded with the flaming, freezing, heavy,
 venom or protection brand, and rarely with the draining, electrocution,
-spectral, vampiric or chaos brand.
+spectral, vampiric, thaumatic or chaos brand.
 
 Ranged weapons will commonly be branded with the flaming, freezing, heavy or
-draining brand, and rarely with the electrocution or chaos brand.
+draining brand, and rarely with the electrocution, thaumatic or chaos brand.
 %%%%
 scroll of butterflies
 

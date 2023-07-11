@@ -821,6 +821,9 @@ void monster::equip_weapon_message(item_def &item)
     case SPWPN_DRAINING:
         mpr("You sense an unholy aura.");
         break;
+    case SPWPN_THAUM:
+        mpr("It pulses with uncontained magical radiation.");
+        break;
     case SPWPN_DISTORTION:
         mpr("Its appearance distorts for a moment.");
         break;
@@ -2904,7 +2907,7 @@ bool monster::asleep() const
 bool monster::backlit(bool self_halo, bool /*temp*/) const
 {
     if (has_ench(ENCH_CORONA) || has_ench(ENCH_STICKY_FLAME)
-        || has_ench(ENCH_SILVER_CORONA))
+        || has_ench(ENCH_SILVER_CORONA) || has_ench(ENCH_GLOW))
     {
         return true;
     }

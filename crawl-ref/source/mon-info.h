@@ -214,6 +214,8 @@ enum monster_info_flags
     MB_SIMULACRUM,
     MB_REFLECTING,
     MB_TELEPORTING,
+    MB_GLOW_LIGHT,
+    MB_GLOW_HEAVY,
     NUM_MB_FLAGS
 };
 

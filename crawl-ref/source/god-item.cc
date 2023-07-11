@@ -121,7 +121,15 @@ bool is_evil_brand(int brand)
 
 bool is_chaotic_brand(int brand)
 {
-    return brand == SPWPN_CHAOS || brand == SPWPN_DISTORTION;
+    switch (brand)
+    {
+    case SPWPN_CHAOS:
+    case SPWPN_DISTORTION:
+    case SPWPN_THAUM:
+        return true;
+    default:
+        return false;
+    }
 }
 
 bool is_hasty_brand(int brand)

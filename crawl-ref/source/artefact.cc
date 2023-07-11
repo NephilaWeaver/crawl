@@ -87,7 +87,7 @@ static bool _god_fits_artefact(const god_type which_god, const item_def &item,
     {
     case GOD_ZIN:
         // Lawful god: no mutagenics.
-        if (artefact_property(item, ARTP_CONTAM))
+        if (artefact_property(item, ARTP_CONTAM) || brand == SPWPN_THAUM)
             return false;
         break;
 
@@ -501,6 +501,7 @@ static void _add_randart_weapon_brand(const item_def &item,
             2, SPWPN_SPEED,
             2, SPWPN_ELECTROCUTION,
             2, SPWPN_ANTIMAGIC,
+            2, SPWPN_THAUM,
             4, SPWPN_DRAINING,
             4, SPWPN_HEAVY,
             4, SPWPN_FLAMING,
@@ -533,6 +534,7 @@ static void _add_randart_weapon_brand(const item_def &item,
             26, SPWPN_DRAINING,
             13, SPWPN_HOLY_WRATH,
             13, SPWPN_ELECTROCUTION,
+            13, SPWPN_THAUM,
             13, SPWPN_SPEED,
             13, SPWPN_VAMPIRISM,
             13, SPWPN_PAIN,

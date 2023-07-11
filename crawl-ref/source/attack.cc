@@ -778,6 +778,7 @@ static const vector<chaos_attack_type> chaos_types = {
       [](const actor &d) { return !d.clarity(); } },
     { AF_DISTORT,   SPWPN_DISTORTION,    2,
       nullptr },
+    // SPWPN_THAUM excluded, since one hit does almost nothing
 };
 
 brand_type attack::random_chaos_brand()
@@ -1280,6 +1281,45 @@ bool attack::attack_shield_blocked(bool verbose)
     return false;
 }
 
+void attack::apply_glow() const
+{
+    if (defender->is_player())
+    {
+        contaminate_player(500 + random2(500));
+        return;
+    }
+
+    monster *mons = defender->as_monster();
+    const mon_enchant old_glow = mons->get_ench(ENCH_GLOW);
+    int &glow_damage = mons->props[GLOW_DAMAGE_KEY].get_int();
+    glow_damage += damage_done;
+
+    if (old_glow.degree >= 2)
+    {
+        const int dam = random2(div_rand_round(glow_damage, 2));
+        string msg = make_stringf(" shudders as magic cascades through %s%s",
+                                  defender->pronoun(PRONOUN_OBJECTIVE).c_str(),
+                                  attack_strength_punctuation(dam).c_str());
+        dprf("done %d", dam);
+        simple_monster_message(*mons, msg.c_str());
+        if (dam)
+        {
+            defender->hurt(attacker, dam, BEAM_MMISSILE, KILLED_BY_BEAM /*eh*/);
+            if (!defender->alive())
+                return;
+        }
+        defender->malmutate("");
+        mons->del_ench(ENCH_GLOW, true);
+        return;
+    }
+
+    mons->add_ench(mon_enchant(ENCH_GLOW, 1, attacker));
+    if (!old_glow.degree)
+        simple_monster_message(*mons, " begins to glow.");
+    else
+        simple_monster_message(*mons, " glows dangerously bright.");
+}
+
 bool attack::apply_poison_damage_brand()
 {
     if (!one_chance_in(4))
@@ -1405,6 +1445,10 @@ bool attack::apply_damage_brand(const char *what)
 
     case SPWPN_DRAINING:
         drain_defender();
+        break;
+
+    case SPWPN_THAUM:
+        apply_glow();
         break;
 
     case SPWPN_VAMPIRISM:

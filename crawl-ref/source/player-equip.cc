@@ -519,6 +519,10 @@ static void _equip_weapon_effect(item_def& item, bool showMsgs, bool unmeld)
                     mpr("You sense an unholy aura.");
                     break;
 
+                case SPWPN_THAUM:
+                    mprf("%s pulses with uncontained magical radiation.", item_name.c_str());
+                    break;
+
                 case SPWPN_SPEED:
                     mpr(you.hands_act("tingle", "!"));
                     break;
