@@ -4128,8 +4128,10 @@ static void _builder_monsters()
         mgen_data mg;
 
         // On D:1, we want monsters out of LOS distance from the player's
-        // starting position, and we don't generate them awake.
-        if (env.absdepth0 == 0)
+        // starting position, and we don't generate them awake. Ironman players
+        // get more protection, since they cannot go back upstairs.
+        if (env.absdepth0 == 0 || (crawl_state.game_is_ironman() 
+                                   && player_in_branch(BRANCH_DUNGEON)))
         {
             mg.behaviour = BEH_SLEEP;
             mg.proximity = PROX_AWAY_FROM_ENTRANCE;
