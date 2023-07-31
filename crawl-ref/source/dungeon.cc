@@ -1249,6 +1249,39 @@ static void _fixup_ironman_hatches()
             _set_grd(*ri, DNGN_FLOOR);
 }
 
+static void _dgn_place_feature_at_random_floor_square(dungeon_feature_type feat,
+                                                      unsigned mask = MMT_VAULT)
+{
+    coord_def place = _dgn_random_point_in_bounds(DNGN_FLOOR, mask, DNGN_FLOOR);
+    if (player_in_branch(BRANCH_SLIME))
+    {
+        int tries = 100;
+        while (!place.origin()  // stop if we fail to find floor.
+               && (dgn_has_adjacent_feat(place, DNGN_ROCK_WALL)
+                   || dgn_has_adjacent_feat(place, DNGN_SLIMY_WALL))
+               && tries-- > 0)
+        {
+            place = _dgn_random_point_in_bounds(DNGN_FLOOR, mask, DNGN_FLOOR);
+        }
+
+        if (tries < 0)  // tries == 0 means we succeeded on the last attempt
+            place.reset();
+    }
+    if (place.origin())
+        throw dgn_veto_exception("Cannot place feature at random floor square.");
+    else
+        _set_grd(place, feat);
+}
+
+static void _place_dungeon_exit()
+{
+    if (!player_in_branch(BRANCH_ZOT) || !at_branch_bottom())
+        return;
+    
+    _dgn_place_feature_at_random_floor_square(
+                static_cast<dungeon_feature_type>(DNGN_EXIT_DUNGEON));
+}
+
 static void _mask_vault(const vault_placement &place, unsigned mask,
                         function<bool(const coord_def &)> skip_fun = nullptr)
 {
@@ -2778,7 +2811,10 @@ static void _build_dungeon_level()
         _fixup_hell_stairs();
 
     if (crawl_state.game_is_ironman())
+    {
         _fixup_ironman_hatches();
+        _place_dungeon_exit();
+    }
 }
 
 static void _dgn_set_floor_colours()
@@ -3572,30 +3608,6 @@ static void _place_traps()
     }
 }
 
-static void _dgn_place_feature_at_random_floor_square(dungeon_feature_type feat,
-                                                      unsigned mask = MMT_VAULT)
-{
-    coord_def place = _dgn_random_point_in_bounds(DNGN_FLOOR, mask, DNGN_FLOOR);
-    if (player_in_branch(BRANCH_SLIME))
-    {
-        int tries = 100;
-        while (!place.origin()  // stop if we fail to find floor.
-               && (dgn_has_adjacent_feat(place, DNGN_ROCK_WALL)
-                   || dgn_has_adjacent_feat(place, DNGN_SLIMY_WALL))
-               && tries-- > 0)
-        {
-            place = _dgn_random_point_in_bounds(DNGN_FLOOR, mask, DNGN_FLOOR);
-        }
-
-        if (tries < 0)  // tries == 0 means we succeeded on the last attempt
-            place.reset();
-    }
-    if (place.origin())
-        throw dgn_veto_exception("Cannot place feature at random floor square.");
-    else
-        _set_grd(place, feat);
-}
-
 // Create randomly-placed stone stairs.
 void dgn_place_stone_stairs(bool maybe_place_hatches)
 {
@@ -3756,6 +3768,17 @@ static bool _place_vault_by_tag(const string &tag)
     return _build_secondary_vault(vault);
 }
 
+static bool _in_ironman_parent(branch_type branch)
+{
+    vector<branch_type> parents = ironman_parents(branch);
+    for (branch_type parent : parents)
+    {
+        if (player_in_branch(parent))
+            return true;
+    }
+    return false;
+}
+
 static void _place_branch_entrances(bool use_vaults)
 {
     // Find what branch entrances are already placed, and what branch
@@ -3770,7 +3793,8 @@ static void _place_branch_entrances(bool use_vaults)
             && !is_hell_subbranch(it->id)
             && ((you.depth >= it->mindepth
                  && you.depth <= it->maxdepth)
-                || level_id::current() == brentry[it->id]))
+                || level_id::current() == brentry[it->id]
+                || crawl_state.game_is_ironman()))
         {
             could_be_placed = true;
         }
@@ -3804,9 +3828,22 @@ static void _place_branch_entrances(bool use_vaults)
         if (is_hell_branch(it->id) || branch_entrance_placed[it->id])
             continue;
 
-        if (it->entry_stairs != NUM_FEATURES
-            && player_in_branch(parent_branch(it->id))
-            && level_id::current() == brentry[it->id])
+        bool brentry_allowed = false;
+
+        if (crawl_state.game_is_ironman())
+        {
+            brentry_allowed = it->entry_stairs != NUM_FEATURES
+                && _in_ironman_parent(it->id)
+                && at_branch_bottom();
+        }
+        else
+        {
+            brentry_allowed = it->entry_stairs != NUM_FEATURES
+                && player_in_branch(parent_branch(it->id))
+                && level_id::current() == brentry[it->id];
+        }
+
+        if (brentry_allowed)
         {
             // Placing a stair.
             dprf(DIAG_DNGN, "Placing stair to %s", it->shortname);

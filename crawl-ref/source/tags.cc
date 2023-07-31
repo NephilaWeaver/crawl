@@ -1154,6 +1154,9 @@ static void _ensure_exit(branch_type br)
 
 static void _add_missing_branches()
 {
+    if (crawl_state.game_is_ironman())
+        return;
+
     const level_id lc = level_id::current();
 
     // Could do all just in case, but this seems safer:

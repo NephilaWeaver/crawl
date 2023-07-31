@@ -5,6 +5,7 @@
 
 #include "item-name.h"
 #include "player.h"
+#include "state.h"
 #include "stringutil.h"
 #include "tag-version.h"
 #include "travel.h"
@@ -167,7 +168,16 @@ vector<branch_type> random_choose_disabled_branches()
     vector<branch_type> disabled_branch;
 
     for (int i=0; i < number_of_branch_swap_pairs; i++)
+    {
         disabled_branch.push_back(swap_branches[i][random_choose(0,1)]);
+
+    // Ironman mode disables some other branches for dungeon structure reasons
+    }
+    if (crawl_state.game_is_ironman())
+    {
+        disabled_branch.push_back(BRANCH_TEMPLE);
+        disabled_branch.push_back(BRANCH_TOMB);
+    }
 
     return disabled_branch;
 }
@@ -295,8 +305,16 @@ branch_type parent_branch(branch_type branch)
     return branches[branch].parent_branch;
 }
 
+vector<branch_type> ironman_parents(branch_type branch)
+{
+    return branches[branch].ironman_parents;
+}
+
 int runes_for_branch(branch_type branch)
 {
+    if (crawl_state.game_is_ironman())
+        return 0;
+
     switch (branch)
     {
     case BRANCH_VAULTS:   return 1;

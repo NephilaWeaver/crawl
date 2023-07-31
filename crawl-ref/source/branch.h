@@ -66,6 +66,8 @@ struct Branch
     vector<rune_type> runes;      // Contained rune(s) (if any).
     branch_noise ambient_noise; // affects noise loudness
     int mon_die_size;           // size of the dice to roll to determine mons/floor
+
+    vector<branch_type> ironman_parents; // ironman parent branches
 };
 
 enum class branch_iterator_type
@@ -119,6 +121,7 @@ branch_type get_branch_at(const coord_def& pos);
 bool branch_is_unfinished(branch_type branch);
 
 branch_type parent_branch(branch_type branch);
+vector<branch_type> ironman_parents(branch_type branch);
 int runes_for_branch(branch_type branch);
 
 string branch_noise_desc(branch_type br);

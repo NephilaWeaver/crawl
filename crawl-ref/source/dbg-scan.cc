@@ -641,6 +641,9 @@ void check_map_validity()
         exit = DNGN_TRANSIT_PANDEMONIUM;
     if (exit == DNGN_EXIT_ABYSS)
         exit = DNGN_UNSEEN;
+    
+    if (crawl_state.game_is_ironman() && exit == DNGN_EXIT_ZIGGURAT)
+        exit = DNGN_UNSEEN;
 
     for (rectangle_iterator ri(0); ri; ++ri)
     {
