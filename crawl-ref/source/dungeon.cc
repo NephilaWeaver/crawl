@@ -1283,7 +1283,7 @@ static void _place_dungeon_exit()
 {
     if (!player_in_branch(BRANCH_ZOT) || !at_branch_bottom())
         return;
-    
+
     _dgn_place_feature_at_random_floor_square(
                 static_cast<dungeon_feature_type>(DNGN_EXIT_DUNGEON));
 }
@@ -4120,7 +4120,7 @@ static void _builder_monsters()
         // On D:1, we want monsters out of LOS distance from the player's
         // starting position, and we don't generate them awake. Ironman players
         // get more protection, since they cannot go back upstairs.
-        if (env.absdepth0 == 0 || (crawl_state.game_is_ironman() 
+        if (env.absdepth0 == 0 || (crawl_state.game_is_ironman()
                                    && player_in_branch(BRANCH_DUNGEON)))
         {
             mg.behaviour = BEH_SLEEP;
