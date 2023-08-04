@@ -168,11 +168,9 @@ vector<branch_type> random_choose_disabled_branches()
     vector<branch_type> disabled_branch;
 
     for (int i=0; i < number_of_branch_swap_pairs; i++)
-    {
         disabled_branch.push_back(swap_branches[i][random_choose(0,1)]);
 
     // Ironman mode disables some other branches for dungeon structure reasons
-    }
     if (crawl_state.game_is_ironman())
     {
         disabled_branch.push_back(BRANCH_TEMPLE);
