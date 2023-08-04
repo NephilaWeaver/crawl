@@ -76,7 +76,6 @@ static unsigned _get_travel_colour(const coord_def& p)
 }
 #endif
 
-#ifndef USE_TILE_LOCAL
 bool travel_colour_override(const coord_def& p)
 {
     if (is_waypoint(p) || is_stair_exclusion(p)
@@ -108,6 +107,7 @@ bool travel_colour_override(const coord_def& p)
         return false;
 }
 
+#ifndef USE_TILE_LOCAL
 static char32_t _get_sightmap_char(dungeon_feature_type feat)
 {
     return get_feature_def(feat).symbol();
@@ -545,6 +545,11 @@ static void _forget_map(bool wizard_forget = false)
 #ifdef USE_TILE
             tile_forget_map(*ri);
 #endif
+            if (monster *m = monster_at(*ri))
+            {
+                m->seen_context = SC_NONE;
+                m->flags &= ~(MF_WAS_IN_VIEW | MF_SEEN);
+            }
         }
         else if (flags & MAP_SEEN_FLAG)
         {
@@ -665,11 +670,11 @@ static map_view_state _init_view_state(const map_control_state& state)
 class UIMapView : public ui::Widget
 {
 public:
-    UIMapView(level_pos& lpos, levelview_excursion& le, bool travel_mode,
+    UIMapView(level_pos& lp, levelview_excursion& le, bool travel_mode,
               bool allow_offlevel)
         : m_reentry(false)
     {
-        m_state.lpos = lpos;
+        m_state.lpos = lp;
         m_state.features = &m_features;
         m_state.feats = &m_feats;
         m_state.excursion = &le;
@@ -1063,14 +1068,12 @@ map_control_state process_map_command(command_type cmd, const map_control_state&
         state.feats->init();
         break;
 
-#ifdef WIZARD
     case CMD_MAP_EXCLUDE_RADIUS:
         set_exclude(state.lpos.pos, getchm() - '0');
 
         _reset_travel_colours(*state.features, state.on_level);
         state.feats->init();
         break;
-#endif
 
     case CMD_MAP_MOVE_DOWN_LEFT:
         state.lpos.pos += coord_def(-1, 1);

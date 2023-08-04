@@ -89,7 +89,7 @@ local function make_tagged_room(options,chosen)
   -- screw with our attempts to understand and position the vault later; and hardwire transparency because lack of it can fail a whole layout
   -- TODO: Store these tags on the room first so we can actually support them down the line ...
   local old_tags = dgn.tags(mapdef)
-  dgn.tags(mapdef, "no_vmirror no_hmirror no_rotate transparent")
+  dgn.tags(mapdef, "no_vmirror no_hmirror no_rotate passable")
   -- Resolve the map so we can find its width / height
   local map, vplace = dgn.resolve_map(mapdef,false)
   local room,room_width,room_height
@@ -104,9 +104,9 @@ local function make_tagged_room(options,chosen)
   dgn.tags_remove(map, "no_vmirror no_hmirror no_rotate")
   -- restore the original tags to mapdef, since this state is persistent
   dgn.tags(mapdef, nil)
-  -- TODO: if a vault is not tagged transparent, this addition is permanent
-  -- and affects any later placement outside vaults
-  dgn.tags(mapdef, old_tags .. " transparent")
+  -- TODO: if a vault is not tagged passable, this addition is permanent; does
+  -- it affect anything?
+  dgn.tags(mapdef, old_tags .. " passable")
 
   local room_width,room_height = dgn.mapsize(map)
   local veto = false
@@ -371,7 +371,7 @@ function place_vaults_rooms(e, data, room_count, options)
         placed = true
         rooms_placed = rooms_placed + 1  -- Increment # rooms placed
         times_failed = 0 -- Reset fail count
-        -- Perform analysis for stairs (and perform inner wall substituion if applicable)
+        -- Perform analysis for stairs (and perform inner wall substitution if applicable)
         analyse_vault_post_placement(data,room,result,options)
         table.insert(results,result)
         -- Increment the count of rooms of this type
@@ -579,7 +579,7 @@ function vaults_maybe_place_vault(e, pos, usage_grid, usage, room, options)
     v_normal_dir = v_normal.dir
   end
 
-  -- If placing a room in an existing wall we have the normal stored alredy in the usage data
+  -- If placing a room in an existing wall we have the normal stored already in the usage data
   if usage.usage == "eligible" or usage.usage == "eligible_open" then
     v_normal = usage.normal
     v_normal_dir = usage.normal.dir

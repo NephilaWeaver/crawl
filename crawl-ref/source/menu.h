@@ -90,7 +90,8 @@ class Menu;
 
 int menu_colour(const string &itemtext,
                 const string &prefix = "",
-                const string &tag = "");
+                const string &tag = "",
+                bool strict=true);
 
 const int MENU_ITEM_STOCK_COLOUR = LIGHTGREY;
 class MenuEntry
@@ -103,6 +104,7 @@ public:
     vector<int> hotkeys;
     MenuEntryLevel level;
     bool indent_no_hotkeys;
+    string preface_format;
     void *data;
     function<bool(const MenuEntry&)> on_select;
 
@@ -172,7 +174,7 @@ public:
     virtual string get_text() const;
     void wrap_text(int width=MIN_COLS);
 
-    virtual int highlight_colour() const
+    virtual int highlight_colour(bool /*unused in superclass*/ = false) const
     {
         return menu_colour(get_text(), "", tag);
     }
@@ -256,7 +258,7 @@ enum MenuFlag
     MF_NOSELECT         = 0x00001,   ///< No selection is permitted
     MF_SINGLESELECT     = 0x00002,   ///< Select just one item
     MF_MULTISELECT      = 0x00004,   ///< Select multiple items
-    MF_NO_SELECT_QTY    = 0x00008,   ///< Disallow partial selections
+    MF_SELECT_QTY       = 0x00008,   ///< Allow partial selections by quantity
     MF_ANYPRINTABLE     = 0x00010,   ///< Any printable character is valid, and
                                      ///< closes the menu.
     MF_SELECT_BY_PAGE   = 0x00020,   ///< Allow selections to occur only on
@@ -269,13 +271,15 @@ enum MenuFlag
     MF_TOGGLE_ACTION    = 0x00400,   ///< ToggleableMenu toggles action as well
     MF_NO_WRAP_ROWS     = 0x00800,   ///< For menus used as tables (eg. ability)
     MF_START_AT_END     = 0x01000,   ///< Scroll to end of list
-    MF_PRESELECTED      = 0x02000,   ///< Has a preselected entry.
+    MF_SECONDARY_SCROLL = 0x02000,   ///< Secondary hotkeys scroll, rather than select
     MF_QUIET_SELECT     = 0x04000,   ///< No selection box and no count.
 
-    MF_USE_TWO_COLUMNS  = 0x08000,   ///< Only valid for tiles menus
+    MF_USE_TWO_COLUMNS  = 0x08000,   ///< Use two columns for long menus
     MF_UNCANCEL         = 0x10000,   ///< Menu is uncancellable
     MF_SPECIAL_MINUS    = 0x20000,   ///< '-' isn't PGUP or clear multiselect
     MF_ARROWS_SELECT    = 0x40000,   ///< arrow keys select, rather than scroll
+    MF_SHOW_EMPTY       = 0x80000,   ///< don't auto-exit empty menus
+    MF_GRID_LAYOUT     = 0x100000,   ///< use a grid-style layout, filling by width first
 };
 
 class UIMenu;
@@ -290,6 +294,10 @@ class UIMenuMore;
 // you pass in MUST be allocated with new, or Crawl will crash.
 
 #define NUMBUFSIZ 10
+
+#define MENU_SELECT_CLEAR 0
+#define MENU_SELECT_INVERT -1
+#define MENU_SELECT_ALL -2
 
 class Menu
 {
@@ -308,7 +316,7 @@ public:
     virtual bool is_set(int flag) const;
     void set_tag(const string& t) { tag = t; }
 
-    bool minus_is_pageup() const;
+    bool minus_is_command() const;
     // Sets a replacement for the default -more- string.
     void set_more(const formatted_string &more);
     void set_more(const string s);
@@ -320,6 +328,7 @@ public:
 
     void set_highlighter(MenuHighlighter *h);
     void set_title(MenuEntry *e, bool first = true, bool indent = false);
+    void set_title(const string &t, bool first = true, bool indent = false);
     void add_entry(MenuEntry *entry);
     void add_entry(unique_ptr<MenuEntry> entry)
     {
@@ -332,13 +341,16 @@ public:
         select_filter = filter;
     }
 
-    void update_menu(bool update_entries = false);
+    bool ui_is_initialized() const;
+
+    virtual void update_menu(bool update_entries = false);
     virtual void set_hovered(int index, bool force=false);
     bool set_scroll(int index);
     bool in_page(int index, bool strict=false) const;
     bool snap_in_page(int index);
-    int get_first_visible(bool skip_init_headers=false) const;
+    int get_first_visible(bool skip_init_headers=false, int col=-1) const;
     bool item_visible(int index);
+    MenuEntry *get_cur_title() const;
 
     virtual int getkey() const { return lastch; }
 
@@ -359,20 +371,25 @@ public:
     selitem_tfn      f_selitem;
     keyfilter_tfn    f_keyfilter;
     function<bool(const MenuEntry&)> on_single_selection;
+    function<bool(const MenuEntry&)> on_examine;
     function<bool()> on_show;
 
     enum cycle  { CYCLE_NONE, CYCLE_TOGGLE, CYCLE_CYCLE } action_cycle;
     enum action { ACT_EXECUTE, ACT_EXAMINE, ACT_MISC, ACT_NUM } menu_action;
-    void cycle_hover(bool reverse=false);
+    void cycle_hover(bool reverse=false, bool preserve_row=false, bool preserve_col=false);
     virtual bool page_down();
     virtual bool line_down();
     virtual bool page_up();
     virtual bool line_up();
     virtual bool cycle_headers(bool forward=true);
+    virtual bool cycle_mode(bool forward=true);
 
     bool title_prompt(char linebuf[], int bufsz, const char* prompt, string help_tag="");
 
     virtual bool process_key(int keyin);
+    virtual bool skip_process_command(int keyin);
+    virtual command_type get_command(int keyin);
+    virtual bool process_command(command_type cmd);
 
 #ifdef USE_TILE_WEB
     void webtiles_write_menu(bool replace = false) const;
@@ -408,7 +425,7 @@ protected:
 
     bool alive;
     bool more_needs_init;
-    int manual_init_hover;
+    bool remap_numpad;
 
     int last_hovered;
     KeymapContext m_kmc;
@@ -452,12 +469,16 @@ protected:
     int next_block_from(int index, bool forward, bool wrap) const;
 
     virtual int pre_process(int key);
-    virtual int post_process(int key);
 
     void deselect_all(bool update_view = true);
-    virtual void select_items(int key, int qty = -1);
-    virtual void select_item_index(int idx, int qty);
+    virtual void select_items(int key, int qty = MENU_SELECT_INVERT); // XX why is the default invert?
+    virtual void select_item_index(int idx, int qty = MENU_SELECT_INVERT);
     void select_index(int index, int qty = -1);
+    virtual bool examine_index(int i);
+    bool examine_by_key(int keyin);
+    int hotkey_to_index(int key, bool primary_only);
+    pair<int,int> hotkey_range(int key);
+    bool process_selection();
 
     bool is_hotkey(int index, int key);
     virtual bool is_selectable(int index) const;
@@ -475,6 +496,7 @@ public:
     ToggleableMenu(int _flags = MF_MULTISELECT)
         : Menu(_flags) {}
     void add_toggle_key(int newkey) { toggle_keys.push_back(newkey); }
+    void add_toggle_from_command(command_type cmd);
 protected:
     virtual int pre_process(int key) override;
 
@@ -524,4 +546,6 @@ formatted_string pad_more_with(formatted_string s,
                                     const formatted_string &pad, int min_width=MIN_COLS);
 string pad_more_with(const string &s, const string &pad, int min_width=MIN_COLS);
 string pad_more_with_esc(const string &s);
+string menu_keyhelp_cmd(command_type cmd);
+string menu_keyhelp_select_keys();
 string hyphenated_hotkey_letters(int how_many, char first);

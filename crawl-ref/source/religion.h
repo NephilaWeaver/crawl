@@ -63,7 +63,9 @@ bool player_can_join_god(god_type which_god, bool temp = true);
 void join_trog_skills(void);
 void join_religion(god_type which_god);
 void god_pitch(god_type which_god);
+void print_god_rejection(god_type which_god);
 god_type choose_god(god_type def_god = NUM_GODS);
+vector<god_type> get_ecu_gods(coord_def pos);
 
 static inline bool you_worship(god_type god)
 {
@@ -101,7 +103,6 @@ bool god_hates_eating(god_type god, monster_type mc);
 bool god_likes_spell(spell_type spell, god_type god);
 bool god_hates_spellcasting(god_type god);
 bool god_hates_spell(spell_type spell, god_type god, bool fake_spell = false);
-bool god_loathes_spell(spell_type spell, god_type god);
 string god_spell_warn_string(spell_type spell, god_type god);
 
 void initialize_ashenzari_props();

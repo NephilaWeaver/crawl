@@ -14,6 +14,7 @@
 #include "item-status-flag-type.h"
 #include "known-items.h"
 #include "libutil.h"
+#include "options.h"
 #include "stringutil.h"
 #include "tag-version.h"
 #include "unicode.h"
@@ -22,12 +23,14 @@ class KnownMenu : public InvMenu
 {
 public:
     KnownMenu(bool show_unknown, bool _all_items_known)
-        : InvMenu(MF_QUIET_SELECT | MF_ALLOW_FORMATTING | MF_USE_TWO_COLUMNS
+        : InvMenu(MF_QUIET_SELECT | MF_ALLOW_FORMATTING
                     | ((show_unknown) ? MF_NOSELECT
                                       : MF_MULTISELECT | MF_ALLOW_FILTER)),
         all_items_known(_all_items_known)
     {
         set_type(menu_type::know);
+        if (!Options.single_column_item_menus)
+            set_flags(get_flags() | MF_USE_TWO_COLUMNS);
         set_more(); // force derived class get_keyhelp()
     }
 
@@ -59,6 +62,12 @@ protected:
         return "known-menu";
     }
 
+    bool examine_index(int) override
+    {
+        // disable behavior from InvMenu
+        return true;
+    }
+
     bool process_key(int key) override
     {
         bool resetting = (lastch == CONTROL('D'));
@@ -74,6 +83,14 @@ protected:
         else
             num = -1;
 
+        if (ui::key_exits_popup(key))
+        {
+            if (resetting)
+                return true;
+            lastch = key;
+            return false;
+        }
+
         switch (key)
         {
         case ',':
@@ -85,12 +102,10 @@ protected:
             key = ',';
             break;
 
-        case '-':
+        case '-': // TODO: assimilate to CMD_MENU_CYCLE_MODE?
         case '\\':
             if (all_items_known)
                 return true; // skip process_key for '-', it's confusing
-        case CK_ENTER:
-        CASE_ESCAPE
             lastch = key;
             return false;
 
@@ -103,7 +118,7 @@ protected:
             {
                 lastch = CONTROL('D');
                 temp_title = title->text;
-                set_title("Select to reset item to default: ");
+                set_title("Select to reset item to default ([*] for all): ");
             }
 
             return true;
@@ -120,37 +135,35 @@ protected:
             if (scrollable)
             {
                 navigation +=
-                    "[<w>PgDn</w>|<w>></w>] page down"
-                    "  [<w>PgUp</w>|<w><<</w>] page up";
+                    menu_keyhelp_cmd(CMD_MENU_PAGE_DOWN) + " page down  "
+                    + menu_keyhelp_cmd(CMD_MENU_PAGE_UP) + " page up  ";
             }
-            // navigation += "</lightgrey>";
-            navigation += "  [<w>Esc</w>|<w>Ret</w>] close"
-                          "  [<w>-</w>] recognised"
-                          "</lightgrey>";
+            navigation += "[<w>-</w>] recognised  "
+                            + menu_keyhelp_cmd(CMD_MENU_EXIT) + " exit"
+                            "</lightgrey>";
         }
         else
         {
             // very similar to the MF_MULTISELECT case for regular Menus, but
             // various differences require an override
-            navigation = "<lightgrey>"
-                         "[<w>Up</w>|<w>Down</w>] select";
+            navigation = "<lightgrey>" + menu_keyhelp_select_keys()
+                         + " select  ";
 
             if (scrollable)
             {
                 navigation +=
-                    "  [<w>PgDn</w>|<w>></w>] page down"
-                    "  [<w>PgUp</w>|<w><<</w>] page up";
+                    menu_keyhelp_cmd(CMD_MENU_PAGE_DOWN) + " page down  "
+                    + menu_keyhelp_cmd(CMD_MENU_PAGE_UP) + " page up  ";
             }
             navigation += "</lightgrey>";
-            navigation = pad_more_with(navigation,
-                                    "[<w>Esc</w>|<w>Ret</w>] close", MIN_COLS);
+            navigation = pad_more_with_esc(navigation);
             navigation +=
                     "\n<lightgrey>"
                     "Letters toggle autopickup  ";
             if (is_set(MF_ARROWS_SELECT))
             {
-                navigation +=
-                    "[<w>.</w>|<w>Space</w>] toggle selected  ";
+                navigation += menu_keyhelp_cmd(CMD_MENU_TOGGLE_SELECTED)
+                    + " toggle selected  ";
             }
 
             if (!all_items_known)
@@ -232,11 +245,11 @@ public:
         return make_stringf(" %c %c %s", hotkeys[0], symbol, name.c_str());
     }
 
-    virtual int highlight_colour() const override
+    virtual int highlight_colour(bool) const override
     {
         if (selected_qty >= 1)
             return WHITE;
-        else if (is_useless_item(*item))
+        else if (is_useless_item(*item, false))
             return DARKGREY;
         else
             return MENU_ITEM_STOCK_COLOUR;
@@ -358,6 +371,7 @@ void check_item_knowledge(bool unknown_items)
     vector<const item_def*> items_food;    //List of foods should come next
 #endif
     vector<const item_def*> items_misc;
+    vector<const item_def*> items_talismans;
     vector<const item_def*> items_other;   //List of other items should go after everything
     vector<SelItem> selected_items;
 
@@ -426,9 +440,9 @@ void check_item_knowledge(bool unknown_items)
                 || i == MISC_RUNE_OF_ZOT
                 || i == MISC_STONE_OF_TREMORS
                 || i == MISC_FAN_OF_GALES
-                || i == MISC_SACK_OF_SPIDERS
                 || i == MISC_LAMP_OF_FIRE
                 || i == MISC_CRYSTAL_BALL_OF_ENERGY
+                || i == MISC_XOMS_CHESSBOARD
 #endif
                 || (i == MISC_QUAD_DAMAGE && !crawl_state.game_is_sprint()))
             {
@@ -436,6 +450,9 @@ void check_item_knowledge(bool unknown_items)
             }
             _add_fake_item(OBJ_MISCELLANY, i, selected_items, items_misc);
         }
+
+        for (int i = 0; i < NUM_TALISMANS; i++)
+            _add_fake_item(OBJ_TALISMANS, i, selected_items, items_talismans);
 
         // N.b. NUM_BOOKS drastically exceeds MAX_SUBTYPES, but it doesn't
         // matter for force_autopickup purposes because we only use 0 and
@@ -460,6 +477,8 @@ void check_item_knowledge(bool unknown_items)
     sort(items_food.begin(), items_food.end(), _identified_item_names);
 #endif
     sort(items_misc.begin(), items_misc.end(), _identified_item_names);
+    // Intentionally don't sort talismans so that they're ordered by tier instead.
+    // (This is dubious!)
 
     KnownMenu menu(unknown_items, all_items_known);
     string stitle;
@@ -486,6 +505,7 @@ void check_item_knowledge(bool unknown_items)
     ml = menu.load_items(items_food, known_item_mangle, ml, false);
 #endif
     ml = menu.load_items(items_misc, known_item_mangle, ml, false);
+    ml = menu.load_items(items_talismans, known_item_mangle, ml, false);
     if (!items_other.empty())
     {
         menu.add_entry(new MenuEntry("Other Items", MEL_SUBTITLE));
@@ -503,6 +523,7 @@ void check_item_knowledge(bool unknown_items)
     deleteAll(items_food);
 #endif
     deleteAll(items_misc);
+    deleteAll(items_talismans);
     deleteAll(items_other);
 
     if (!all_items_known && (last_char == '\\' || last_char == '-'))

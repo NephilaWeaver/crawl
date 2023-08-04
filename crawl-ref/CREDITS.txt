@@ -105,6 +105,7 @@
     Beargit
     Bill Beher
     Alexander Beisig
+    benadryl
     biasface
     bjobae
     Stu Black
@@ -125,6 +126,7 @@
     Andre Bubel
     Trent W. Buck
     Joe Buzzelli
+    Micah C
     Policarpo Caballero
     Ian Caltabiano
     David Candido
@@ -187,6 +189,7 @@
     Gittourarmy
     Ben Goetter
     Aaron Golden
+    Gompami
     Ed Gonzalez
     Gopall
     Goratrix
@@ -212,7 +215,6 @@
     ICC
     Icy Lich
     Ilyak
-    Implojin
     Matthew Ince
     Mitsuhiro Itakura
     Jeekaroose
@@ -224,6 +226,7 @@
     Dominic 'dk' Kexel
     Jarmo Kielosto
     Brandon Kime
+    King7artist
     Kornel Kisielewicz
     Vesa Kivimäki
     Daniel Klein
@@ -240,13 +243,13 @@
     Christopher Landry
     Lantier
     Maciej Lapinski
-    Nikolai Lavsky
     Lamil Lerran
     Jordan Lewis
     Sami Liedes
     Dom 'Bodrick' Light
     Lightli
     Lewis R. Liu
+    Lyre
     Kiëd Llaentenn
     Mark Lodato
     Matthew Ludivico
@@ -301,6 +304,7 @@
     Oneirical
     Justin Clark Ong
     Yuuma Oohara
+    orjb1
     Julian Ospald
     Malwyn P
     palyth
@@ -337,6 +341,7 @@
     Andy Roche
     rockygargoyle
     Will Rogers
+    RollingRubic
     Nate Rook
     David Rose
     runrin
@@ -430,16 +435,19 @@ The Dungeon Crawl Stone Soup development team is:
     Brendan Hickey
     Aidan Holm
     Pete Hurst
+    Implojin
     Eino Keskitalo
     Vsevolod Kozlov
     Janne Lahdenperä
     Pekka Lampila
     Raphaël Langella
     Nat Lanza
+    Nikolai Lavsky
     Jesse Luehrs
     Alan Malloy
     Shmuale Mark
     John McCartney
+    Félix Medrano
     Steve Melenchuk
     Neil Middleton
     Seve Monahan

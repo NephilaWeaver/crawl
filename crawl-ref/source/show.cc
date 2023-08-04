@@ -109,9 +109,6 @@ bool show_type::is_cleanable_monster() const
 
 static void _update_feat_at(const coord_def &gp)
 {
-    if (!you.see_cell(gp))
-        return;
-
     dungeon_feature_type feat = env.grid(gp);
     unsigned colour = env.grid_colours(gp);
     trap_type trap = TRAP_UNASSIGNED;
@@ -175,7 +172,9 @@ static void _update_feat_at(const coord_def &gp)
     // so we can properly recolor both.
     if (env.level_state & LSTATE_ICY_WALL
         && (is_icecovered(gp)
-            || !feat_is_wall(feat) && count_adjacent_icy_walls(gp)))
+            || !feat_is_wall(feat)
+                && count_adjacent_icy_walls(gp)
+                && you.see_cell_no_trans(gp)))
     {
         env.map_knowledge(gp).flags |= MAP_ICY;
     }
@@ -214,6 +213,7 @@ static show_item_type _item_to_show_code(const item_def &item)
     case OBJ_RODS:       return SHOW_ITEM_ROD;
 #endif
     case OBJ_MISCELLANY: return SHOW_ITEM_MISCELLANY;
+    case OBJ_TALISMANS:  return SHOW_ITEM_TALISMAN;
     case OBJ_CORPSES:
         if (item.sub_type == CORPSE_SKELETON)
             return SHOW_ITEM_SKELETON;
@@ -418,7 +418,7 @@ static void _handle_unseen_mons(monster* mons, uint32_t hash_ind)
  *
  * This function updates the map_knowledge grid with a monster_info if relevant.
  * If the monster is not currently visible to the player, the map knowledge will
- * be upated with a disturbance if necessary.
+ * be updated with a disturbance if necessary.
  * @param mons  The monster at the relevant location.
 **/
 static void _update_monster(monster* mons)

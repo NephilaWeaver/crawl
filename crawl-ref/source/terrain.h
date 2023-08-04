@@ -104,6 +104,7 @@ void find_connected_identical(const coord_def& d, set<coord_def>& out, bool know
 
 bool slime_wall_neighbour(const coord_def& c);
 int count_adjacent_slime_walls(const coord_def &pos);
+int slime_wall_corrosion(actor* act);
 void slime_wall_damage(actor* act, int delay);
 
 int count_adjacent_icy_walls(const coord_def &pos);
@@ -120,7 +121,9 @@ void dungeon_terrain_changed(const coord_def &pos,
                              bool preserve_features = false,
                              bool preserve_items = false,
                              bool temporary = false,
-                             bool wizmode = false);
+                             bool wizmode = false,
+                             unsigned short flv_nfeat = 0,
+                             unsigned short flv_nfeat_idx = 0);
 
 // Moves everything on the level at src to dst.
 void dgn_move_entities_at(coord_def src,

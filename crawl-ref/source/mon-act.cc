@@ -153,6 +153,8 @@ static void _monster_regenerate(monster* mons)
 
     if (mons->type == MONS_PARGHIT)
         mons->heal(27); // go whoosh
+    else if (mons->type == MONS_DEMONIC_CRAWLER)
+        mons->heal(6); // go zoom
     else if (mons_class_fast_regen(mons->type)
         || mons->has_ench(ENCH_REGENERATION)
         || _mons_natural_regen_roll(mons))
@@ -370,7 +372,7 @@ static bool _ranged_ally_in_dir(monster* mon, coord_def p)
                 return false;
             }
 
-            // XXX: Sometimes the player wants llies in front of them to stay
+            // XXX: Sometimes the player wants allies in front of them to stay
             // out of LOF. However use of allies for cover is extremely common,
             // so it doesn't work well to always have allies move out of player
             // LOF. Until a better interface or method can be found to handle
@@ -492,20 +494,6 @@ static bool _mons_can_cast_dig(const monster* mons, bool random)
             && !(mons->is_silenced() && flags & MON_SPELL_SILENCE_MASK);
 }
 
-static bool _mons_can_zap_dig(const monster* mons)
-{
-    return mons->foe != MHITNOT
-           && !mons->asleep()
-           && !mons->confused() // they don't get here anyway
-           && !mons->berserk_or_insane()
-           && !mons->submerged()
-           && mons_itemuse(*mons) >= MONUSE_STARTING_EQUIPMENT
-           && mons->inv[MSLOT_WAND] != NON_ITEM
-           && env.item[mons->inv[MSLOT_WAND]].is_type(OBJ_WANDS, WAND_DIGGING)
-           && mons->likes_wand(env.item[mons->inv[MSLOT_WAND]])
-           && env.item[mons->inv[MSLOT_WAND]].charges > 0;
-}
-
 static void _set_mons_move_dir(const monster* mons,
                                coord_def* dir, coord_def* delta)
 {
@@ -564,7 +552,7 @@ static void _handle_battiness(monster &mons)
 {
     if (!mons_is_batty(mons))
         return;
-    mons.behaviour = BEH_WANDER;
+    mons.behaviour = BEH_BATTY;
     set_random_target(&mons);
     mons.props[BATTY_TURNS_KEY] = 0;
 }
@@ -838,61 +826,6 @@ static void _handle_movement(monster* mons)
         mmov.reset();
 }
 
-static void _update_item_knowledge(object_class_type base_type, int sub_type)
-{
-    // Identify a scroll or potion and apply inscriptions if necessary.
-    if (set_ident_type(base_type, sub_type, true))
-    {
-        // Assign the inventory letter according to the item_slot option.
-        for (auto &item : you.inv)
-            if (item.base_type == base_type && item.sub_type == sub_type)
-            {
-                auto_assign_item_slot(item);
-                break;
-            }
-    }
-}
-
-static bool _handle_potion(monster& mons)
-{
-    item_def* potion = mons.mslot_item(MSLOT_POTION);
-    if (mons.asleep()
-        || !potion
-        || !one_chance_in(3)
-        || mons_itemuse(mons) < MONUSE_STARTING_EQUIPMENT
-        || potion->base_type != OBJ_POTIONS)
-    {
-        return false;
-    }
-
-    bool rc = false;
-
-    const potion_type ptype = static_cast<potion_type>(potion->sub_type);
-
-    if (mons.can_drink_potion(ptype) && mons.should_drink_potion(ptype))
-    {
-        const bool was_visible = you.can_see(mons);
-
-        // XXX: this is mostly to prevent a funny message order:
-        // "$foo drinks a potion. $foo wields a great mace. $foo goes berserk!"
-        if (ptype == POT_BERSERK_RAGE)
-            mons.wield_melee_weapon();
-
-        // Drink the potion, and identify it.
-        if (mons.drink_potion_effect(ptype) && was_visible)
-            _update_item_knowledge(OBJ_POTIONS, ptype);
-
-        // Remove it from inventory.
-        if (dec_mitm_item_quantity(potion->index(), 1))
-            mons.inv[MSLOT_POTION] = NON_ITEM;
-
-        mons.lose_energy(EUT_ITEM);
-        rc = true;
-    }
-
-    return rc;
-}
-
 /**
  * Check if the monster has a swooping attack and is in a position to
  * use it, and do so if they can.
@@ -1009,79 +942,14 @@ static bool _handle_reaching(monster& mons)
     return ret;
 }
 
-static bool _handle_scroll(monster& mons)
-{
-    item_def* scroll = mons.mslot_item(MSLOT_SCROLL);
-
-    // Yes, there is a logic to this ordering {dlb}:
-    if (mons.asleep()
-        || mons_is_confused(mons)
-        || mons.submerged()
-        || !scroll
-        || mons.has_ench(ENCH_BLIND)
-        || !one_chance_in(3)
-        || mons_itemuse(mons) < MONUSE_STARTING_EQUIPMENT
-        || mons.is_silenced()
-        || scroll->base_type != OBJ_SCROLLS)
-    {
-        return false;
-    }
-
-    bool read        = false;
-    bool was_visible = you.can_see(mons);
-    const int scroll_type = scroll->sub_type;
-
-    if (scroll_type == SCR_SUMMONING && mons.can_see(you))
-    {
-        simple_monster_message(mons, " reads a scroll.");
-        mprf("Wisps of shadow swirl around %s.", mons.name(DESC_THE).c_str());
-        read = true;
-        int count = roll_dice(2, 2);
-        for (int i = 0; i < count; ++i)
-        {
-            create_monster(
-                mgen_data(RANDOM_MOBILE_MONSTER, SAME_ATTITUDE((&mons)),
-                          mons.pos(), mons.foe)
-                .set_summoned(&mons, 3, MON_SUMM_SCROLL));
-        }
-    }
-
-    if (read)
-    {
-        if (dec_mitm_item_quantity(mons.inv[MSLOT_SCROLL], 1))
-            mons.inv[MSLOT_SCROLL] = NON_ITEM;
-
-        if (was_visible)
-            _update_item_knowledge(OBJ_SCROLLS, scroll_type);
-
-        mons.lose_energy(EUT_ITEM);
-    }
-
-    return read;
-}
-
-static void _mons_fire_wand(monster& mons, item_def &wand, bolt &beem,
-                            bool was_visible)
+static void _mons_fire_wand(monster& mons, spell_type mzap, bolt &beem)
 {
     if (!simple_monster_message(mons, " zaps a wand."))
     {
         if (!silenced(you.pos()))
             mprf(MSGCH_SOUND, "You hear a zap.");
     }
-
-    // charge expenditure {dlb}
-    wand.charges--;
-    const spell_type mzap =
-        spell_in_wand(static_cast<wand_type>(wand.sub_type));
-
     mons_cast(&mons, beem, mzap, MON_SPELL_EVOKE, false);
-
-    if (was_visible && wand.charges <= 0)
-        mprf("The now-empty wand crumbles to dust.");
-
-    if (wand.charges <= 0)
-        dec_mitm_item_quantity(wand.index(), 1);
-
     mons.lose_energy(EUT_ITEM);
 }
 
@@ -1135,13 +1003,11 @@ static bool _handle_wand(monster& mons)
     beem.aux_source =
         wand->name(DESC_QUALNAME, false, true, false, false);
     fire_tracer(&mons, beem);
-    if (mons_should_fire(beem))
-    {
-        _mons_fire_wand(mons, *wand, beem, you.see_cell(mons.pos()));
-        return true;
-    }
+    if (!mons_should_fire(beem))
+        return false;
 
-    return false;
+    _mons_fire_wand(mons, mzap, beem);
+    return true;
 }
 
 bool handle_throw(monster* mons, bolt & beem, bool teleport, bool check_only)
@@ -1527,11 +1393,7 @@ static bool _mons_take_special_action(monster &mons, int old_energy)
     if (friendly_or_near
         || mons.type == MONS_TEST_SPAWNER
         // Slime creatures can split when offscreen.
-        || mons.type == MONS_SLIME_CREATURE
-        // Let monsters who have Awaken Earth use it off-screen.
-        // :( -- pf
-        || mons.has_spell(SPELL_AWAKEN_EARTH)
-        )
+        || mons.type == MONS_SLIME_CREATURE)
     {
         // [ds] Special abilities shouldn't overwhelm
         // spellcasting in monsters that have both. This aims
@@ -1542,21 +1404,6 @@ static bool _mons_take_special_action(monster &mons, int old_energy)
             _handle_battiness(mons);
             DEBUG_ENERGY_USE_REF("spell or special");
             mmov.reset();
-            return true;
-        }
-    }
-
-    if (friendly_or_near)
-    {
-        if (_handle_potion(mons))
-        {
-            DEBUG_ENERGY_USE_REF("_handle_potion()");
-            return true;
-        }
-
-        if (_handle_scroll(mons))
-        {
-            DEBUG_ENERGY_USE_REF("_handle_scroll()");
             return true;
         }
     }
@@ -1575,7 +1422,7 @@ static bool _mons_take_special_action(monster &mons, int old_energy)
 
     if (friendly_or_near)
     {
-        bolt beem = setup_targetting_beam(mons);
+        bolt beem = setup_targeting_beam(mons);
         if (handle_throw(&mons, beem, false, false))
         {
             DEBUG_ENERGY_USE_REF("_handle_throw()");
@@ -1699,6 +1546,7 @@ void handle_monster_move(monster* mons)
     }
 
     mons->shield_blocks = 0;
+    check_spectral_weapon(*mons);
 
     _mons_in_cloud(*mons);
     actor_apply_toxic_bog(mons);
@@ -1706,7 +1554,7 @@ void handle_monster_move(monster* mons)
     if (!mons->alive())
         return;
 
-    if (env.level_state & LSTATE_SLIMY_WALL)
+    if (you.duration[DUR_OOZEMANCY] && (env.level_state & LSTATE_SLIMY_WALL))
         slime_wall_damage(mons, speed_to_duration(mons->speed));
 
     if (!mons->alive())
@@ -1884,7 +1732,8 @@ void handle_monster_move(monster* mons)
                     mons->foe = MHITYOU;
                     mons->target = you.pos();
 
-                    if (_handle_ru_melee_redirection(*mons, &new_target))
+                    if (mons_has_attacks(*mons, true)
+                        && _handle_ru_melee_redirection(*mons, &new_target))
                     {
                         mons->speed_increment -= non_move_energy;
                         DEBUG_ENERGY_USE("_handle_ru_redirection()");
@@ -2127,7 +1976,7 @@ static void _torpor_snail_slow(monster* mons)
     // XXX: might be nice to refactor together with _ancient_zyme_sicken().
     // XXX: also with torpor_slowed().... so many duplicated checks :(
 
-    if (is_sanctuary(mons->pos()))
+    if (is_sanctuary(mons->pos()) || mons->props.exists(KIKU_WRETCH_KEY))
         return;
 
     if (!is_sanctuary(you.pos())
@@ -2179,7 +2028,8 @@ static void _post_monster_move(monster* mons)
         _torpor_snail_slow(mons);
 
     if (mons->type == MONS_WATER_NYMPH
-        || mons->type == MONS_ELEMENTAL_WELLSPRING)
+        || mons->type == MONS_ELEMENTAL_WELLSPRING
+        || mons->type == MONS_NORRIS)
     {
         for (adjacent_iterator ai(mons->pos(), false); ai; ++ai)
             if (feat_has_solid_floor(env.grid(*ai))
@@ -2225,7 +2075,7 @@ static void _post_monster_move(monster* mons)
         // TODO: implement monster spectral ego
     }
 
-    if (mons->foe != MHITNOT && mons_is_wandering(*mons) && mons_is_batty(*mons))
+    if (mons->foe != MHITNOT && mons->behaviour == BEH_BATTY)
     {
         int &bat_turns = mons->props[BATTY_TURNS_KEY].get_int();
         bat_turns++;
@@ -2825,8 +2675,7 @@ bool mon_can_move_to_pos(const monster* mons, const coord_def& delta,
     if (_check_damaging_walls(mons, targ))
         return false;
 
-    const bool digs = _mons_can_cast_dig(mons, false)
-                      || _mons_can_zap_dig(mons);
+    const bool digs = _mons_can_cast_dig(mons, false);
     if ((target_grid == DNGN_ROCK_WALL || target_grid == DNGN_CLEAR_ROCK_WALL)
            && (mons->can_burrow() || digs)
         || mons->type == MONS_SPATIAL_MAELSTROM
@@ -3236,7 +3085,7 @@ static bool _do_move_monster(monster& mons, const coord_def& delta)
     // This appears to be the real one, ie where the movement occurs:
 
     // The monster gave a "comes into view" message and then immediately
-    // moved back out of view, leaing the player nothing to see, so give
+    // moved back out of view, leaving the player nothing to see, so give
     // this message to avoid confusion.
     else if (crawl_state.game_is_hints() && mons.flags & MF_WAS_IN_VIEW
              && !you.see_cell(f))
@@ -3440,8 +3289,7 @@ static bool _monster_move(monster* mons)
 
     const bool burrows = mons->can_burrow();
     const bool flattens_trees = mons_flattens_trees(*mons);
-    const bool digs = _mons_can_cast_dig(mons, false)
-                      || _mons_can_zap_dig(mons);
+    const bool digs = _mons_can_cast_dig(mons, false);
     // Take care of Dissolution burrowing, lerny, etc
     if (burrows || flattens_trees || digs)
     {
@@ -3457,17 +3305,6 @@ static bool _monster_move(monster* mons)
                 beem.target = mons->pos() + mmov;
                 mons_cast(mons, beem, SPELL_DIG,
                           mons->spell_slot_flags(SPELL_DIG));
-            }
-            else if (_mons_can_zap_dig(mons))
-            {
-                ASSERT(mons->mslot_item(MSLOT_WAND));
-                item_def &wand = *mons->mslot_item(MSLOT_WAND);
-                setup_mons_cast(mons, beem, SPELL_DIG, true);
-                beem.target = mons->pos() + mmov;
-                _mons_fire_wand(*mons, wand, beem, you.can_see(*mons));
-
-                //_setup_wand_beam(beem, *mons, wand);
-                //_mons_fire_wand(*mons, wand, beem, you.can_see(*mons), false);
             }
             else
                 simple_monster_message(*mons, " falters for a moment.");
@@ -3569,6 +3406,9 @@ static bool _monster_move(monster* mons)
 
         if (mons->has_ench(ENCH_ROLLING))
             place_cloud(CLOUD_DUST, mons->pos(), 2, mons);
+
+        if (mons->type == MONS_BALL_LIGHTNING)
+            place_cloud(CLOUD_ELECTRICITY, mons->pos(), random_range(2, 3), mons);
 
         if (mons->type == MONS_FOXFIRE)
             check_place_cloud(CLOUD_FLAME, mons->pos(), 2, mons);

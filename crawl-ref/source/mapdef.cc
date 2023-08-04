@@ -1436,6 +1436,9 @@ map_corner_t map_lines::merge_subvault(const coord_def &mtl,
             (*overlay)(x, y).keyspec_idx = idx;
         }
 
+    dprf(DIAG_DNGN, "Merged subvault '%s' at %d,%d x %d,%d",
+        vmap.name.c_str(), vtl.x, vtl.y, vbr.x, vbr.y);
+
     return map_corner_t(vtl, vbr);
 }
 
@@ -4205,7 +4208,6 @@ mons_list::mons_spec_slot mons_list::parse_mons_spec(string spec)
             MAYBE_COPY(MUTANT_BEAST_FACETS);
             MAYBE_COPY(MGEN_BLOB_SIZE);
             MAYBE_COPY(MGEN_NUM_HEADS);
-            MAYBE_COPY(MGEN_NO_AUTO_CRUMBLE);
 #undef MAYBE_COPY
         }
 
@@ -4363,24 +4365,26 @@ void mons_list::get_zombie_type(string s, mons_spec &spec) const
     if (base_monster.props.exists(MGEN_NUM_HEADS))
         spec.props[MGEN_NUM_HEADS] = base_monster.props[MGEN_NUM_HEADS];
 
-    const int zombie_size = mons_zombie_size(spec.monbase);
-    if (!zombie_size)
+    spec.type = zombie_montypes[mod];
+    switch (spec.type)
     {
-        spec.type = MONS_PROGRAM_BUG;
-        return;
-    }
-    if (mod == 1 && mons_class_flag(spec.monbase, M_NO_ZOMBIE))
-    {
-        spec.type = MONS_PROGRAM_BUG;
-        return;
-    }
-    if (mod == 2 && mons_class_flag(spec.monbase, M_NO_SKELETON))
-    {
-        spec.type = MONS_PROGRAM_BUG;
-        return;
+    case MONS_SIMULACRUM:
+    case MONS_SPECTRAL_THING:
+        if (mons_class_can_be_spectralised(spec.monbase))
+            return;
+        break;
+    case MONS_SKELETON:
+        if (!mons_skeleton(spec.monbase))
+            break;
+        // fallthrough to MONS_ZOMBIE
+    case MONS_ZOMBIE:
+    default:
+        if (mons_class_can_be_zombified(spec.monbase))
+            return;
+        break;
     }
 
-    spec.type = zombie_montypes[mod];
+    spec.type = MONS_PROGRAM_BUG;
 }
 
 mons_spec mons_list::get_hydra_spec(const string &name) const
@@ -4448,7 +4452,7 @@ mons_spec mons_list::get_slime_spec(const string &name) const
 
 /**
  * Build a monster specification for a specified pillar of salt. The pillar of
- * salt won't crumble over time, since that seems unuseful for any version of
+ * salt won't crumble over time, since that seems useful for any version of
  * this function.
  *
  * @param name      The description of the pillar of salt; e.g.
@@ -4467,7 +4471,6 @@ mons_spec mons_list::get_salt_spec(const string &name) const
 
     mons_spec spec(MONS_PILLAR_OF_SALT);
     spec.monbase = _fixup_mon_type(base_mon.type);
-    spec.props[MGEN_NO_AUTO_CRUMBLE] = true;
     return spec;
 }
 
@@ -4481,7 +4484,7 @@ mons_spec mons_list::get_salt_spec(const string &name) const
 //    yellow draconian or draconian knight - the monster specified.
 //
 // Others:
-//    any draconian => any random draconain
+//    any draconian => any random draconian
 //    any base draconian => any unspecialised coloured draconian.
 //    any nonbase draconian => any specialised coloured draconian.
 //    any <colour> draconian => any draconian of the colour.
@@ -4947,7 +4950,7 @@ int str_to_ego(object_class_type item_type, string ego_str)
         "protection",
         "draining",
         "speed",
-        "vorpal",
+        "heavy",
 #if TAG_MAJOR_VERSION == 34
         "flame",
         "frost",
@@ -5605,6 +5608,26 @@ void item_list::parse_random_by_class(string c, item_spec &spec)
     {
         spec.base_type = OBJ_WANDS;
         spec.sub_type = item_for_set(ITEM_SET_BLAST_WANDS);
+        return;
+    }
+    if (c == "ally scroll")
+    {
+        spec.base_type = OBJ_SCROLLS;
+        spec.sub_type = item_for_set(ITEM_SET_ALLY_SCROLLS);
+        return;
+    }
+
+    if (c == "area misc")
+    {
+        spec.base_type = OBJ_MISCELLANY;
+        spec.sub_type = item_for_set(ITEM_SET_AREA_MISCELLANY);
+        return;
+    }
+
+    if (c == "ally misc")
+    {
+        spec.base_type = OBJ_MISCELLANY;
+        spec.sub_type = item_for_set(ITEM_SET_ALLY_MISCELLANY);
         return;
     }
 

@@ -209,6 +209,10 @@ bool monster::add_ench(const mon_enchant &ench)
     {
         remove_summons();
     }
+
+    if (ench.ench == ENCH_PARALYSIS)
+        stop_directly_constricting_all();
+
     return true;
 }
 
@@ -270,7 +274,7 @@ void monster::add_enchantment_effect(const mon_enchant &ench, bool quiet)
 
         if (type == MONS_FLAYED_GHOST)
         {
-            // temporarly change our attitude back (XXX: scary code...)
+            // temporarily change our attitude back (XXX: scary code...)
             unwind_var<mon_enchant_list> enchants(enchantments, mon_enchant_list{});
             unwind_var<FixedBitVector<NUM_ENCHANTMENTS>> ecache(ench_cache, {});
             end_flayed_effect(this);
@@ -1133,7 +1137,7 @@ bool monster::decay_enchantment(enchant_type en, bool decay_degree)
     return false;
 }
 
-bool monster::clear_far_engulf(bool force)
+bool monster::clear_far_engulf(bool force, bool /*moved*/)
 {
     if (you.duration[DUR_WATER_HOLD]
         && (mid_t) you.props[WATER_HOLDER_KEY].get_int() == mid)
@@ -1157,7 +1161,7 @@ static bool _merfolk_avatar_movement_effect(const monster* mons)
         || you.duration[DUR_TIME_STEP]
         || you.cannot_act()
         || you.clarity()
-        || you.is_stationary()
+        || !you.is_motile()
         || you.resists_dislodge("being lured by song"))
     {
         return true;
@@ -1525,8 +1529,7 @@ void monster::apply_enchantment(const mon_enchant &me)
             del_ench(ENCH_STICKY_FLAME);
             break;
         }
-        const int dam = resist_adjust_damage(this, BEAM_FIRE,
-                                             roll_dice(2, 4) - 1);
+        const int dam = resist_adjust_damage(this, BEAM_FIRE, roll_dice(2, 4));
 
         if (dam > 0)
         {

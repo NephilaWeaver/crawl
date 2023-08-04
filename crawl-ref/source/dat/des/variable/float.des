@@ -1538,6 +1538,136 @@ pp..F..pp   qq..H..qq   pp..F..pp
   ppPpp       qqQqq       ppPpp
 ENDMAP
 
+NAME:    nicolae_moon_pools
+TAGS:    transparent no_pool_fixup
+DEPTH:   D:8-, Depths
+ORIENT:  float
+KFEAT:   az`- = c
+SHUFFLE: `-, a`/z-
+COLOUR:  a` = white, z- = magenta
+TILE:    a` = dngn_stone_wall_white
+TILE:    z- = dngn_stone_dark
+CLEAR:   _
+MAP
+                   ........
+                   .wwwwww.
+                   .wwa`ww.
+                   .waaa`w.
+                   .waaa`w.
+     ........      .wwa`ww.      ........
+     .wwwwww.      .wwwwww.      .wwwwww.
+     .wwazww.      ........      .ww-aww.
+     .waa`zw.                    .w-aaaw.
+     .waa`zw.                    .w-aaaw.
+     .wwazww.                    .ww-aww.
+     .wwwwww.                    .wwwwww.
+     ........                    ........
+_
+_
+_
+_
+_
+_
+........                              ........
+.wwwwww.                              .wwwwww.
+.wwazww.                              .wwzaww.
+.wa`zzw.                              .wz-aaw.
+.wa`zzw.                              .wz-aaw.
+.wwazww.                              .wwzaww.
+.wwwwww.                              .wwwwww.
+........                              ........
+_
+_
+_
+_
+_
+_
+     ........                    ........
+     .wwwwww.                    .wwwwww.
+     .ww`zww.                    .wwzaww.
+     .w`zzzw.                    .wzz-aw.
+     .w`zzzw.                    .wzz-aw.
+     .ww`zww.      ........      .wwzaww.
+     .wwwwww.      .wwwwww.      .wwwwww.
+     ........      .wwz-ww.      ........
+                   .wzzz-w.
+                   .wzzz-w.
+                   .wwz-ww.
+                   .wwwwww.
+                   ........
+ENDMAP
+
+# https://www.youtube.com/watch?v=JbfhzlMk2eY
+NAME:     nicolae_hitomezashi
+TAGS:     transparent decor
+DEPTH:    D:8-, Depths
+ORIENT:   float
+SUBVAULT: D : nico_hito
+SUBVAULT: E : nico_hito
+SUBVAULT: F : nico_hito
+SUBVAULT: H : nico_hito
+SUBVAULT: J : nico_hito
+SUBVAULT: K : nico_hito
+SUBVAULT: L : nico_hito
+SUBVAULT: M : nico_hito
+SUBVAULT: N : nico_hito
+SUBVAULT: O : nico_hito
+SUBVAULT: P : nico_hito
+SUBVAULT: Q : nico_hito
+SUBVAULT: R : nico_hito
+SUBVAULT: S : nico_hito
+SUBVAULT: Z : nico_hito
+SUBVAULT: a : nico_hito
+SUBVAULT: p : nico_hito
+SUBVAULT: q : nico_hito
+MAP
+ DDD DDD DDD DDD DDD DDD DDD DDD
+O...P...Q...R...S...Z...a...p...q
+O...P...Q...R...S...Z...a...p...q
+O...P...Q...R...S...Z...a...p...q
+ EEE.EEE.EEE.EEE.EEE.EEE.EEE.EEE
+O...P...Q...R...S...Z...a...p...q
+O...P...Q...R...S...Z...a...p...q
+O...P...Q...R...S...Z...a...p...q
+ FFF.FFF.FFF.FFF.FFF.FFF.FFF.FFF
+O...P...Q...R...S...Z...a...p...q
+O...P...Q...R...S...Z...a...p...q
+O...P...Q...R...S...Z...a...p...q
+ HHH.HHH.HHH.HHH.HHH.HHH.HHH.HHH
+O...P...Q...R...S...Z...a...p...q
+O...P...Q...R...S...Z...a...p...q
+O...P...Q...R...S...Z...a...p...q
+ JJJ.JJJ.JJJ.JJJ.JJJ.JJJ.JJJ.JJJ
+O...P...Q...R...S...Z...a...p...q
+O...P...Q...R...S...Z...a...p...q
+O...P...Q...R...S...Z...a...p...q
+ KKK.KKK.KKK.KKK.KKK.KKK.KKK.KKK
+O...P...Q...R...S...Z...a...p...q
+O...P...Q...R...S...Z...a...p...q
+O...P...Q...R...S...Z...a...p...q
+ LLL.LLL.LLL.LLL.LLL.LLL.LLL.LLL
+O...P...Q...R...S...Z...a...p...q
+O...P...Q...R...S...Z...a...p...q
+O...P...Q...R...S...Z...a...p...q
+ MMM.MMM.MMM.MMM.MMM.MMM.MMM.MMM
+O...P...Q...R...S...Z...a...p...q
+O...P...Q...R...S...Z...a...p...q
+O...P...Q...R...S...Z...a...p...q
+ NNN NNN NNN NNN NNN NNN NNN NNN
+ENDMAP
+
+# The row subvaults at the edges of the main vault will each have one @ glyph,
+# so that each side will have one guaranteed connection. @ glyphs not at the
+# edge of the main subvault appear to be ignored, which conveniently means we
+# don't need separate subvaults for edge rows and interior rows.
+NAME:   nicolae_hito_row
+TAGS:   unrand allow_dup nico_hito
+DEPTH:  D:8-, Depths
+NSUBST: @ = @ / .
+MAP
+ccc .@. ccc .@. ccc .@. ccc .@.
+ENDMAP
+
 ###############################################################################
 #
 # <<2>> Themed threat vaults.
@@ -1796,25 +1926,29 @@ ENDMAP
 # Lions and Tigers and Bears, oh my! (or at least bears)
 #
 NAME:   lemuel_bear_cage
+TAGS:   no_monster_gen no_item_gen
 ORIENT: float
-DEPTH:  D:7-
-MONS:   black bear / polar bear
-MONS:   wyvern / manticore w:3
-MONS:   yak / dream sheep w:5 / death yak w:3
-MONS:   hound / wolf w:5 / hog
-SUBST:  1 = 1:30 2 3 4 .
+DEPTH:  D:7-11
+MONS:   black bear, polar bear, wolf, hog, yak, wyvern, manticore
+KMONS:  D = dream sheep
+KMONS:  E = death yak
+: if you.depth() < 9 then
+SUBST:  D = 1:30 2 3 4:5 5 6 7:5 D:5 E:5 .
+: else
+SUBST:  D = 1 2:30 3:5 4:5 5:5 6:5 7 D E .
+: end
 MAP
-cccccccccc
-c.1.1.1.1c
-c1.1.1.1.c
-c.1.1.1.1c
-c1.1.1.1.c
-c.1.1.1.1c
-cnn====nnc
-..........
-@........@
-..........
-xxxxxxxxxx
+ccccccccc
+c|D*D*D|c
+cD%D%D%Dc
+c.D.D.D.c
+cD.D.D.Dc
+c.D.D.D.c
+cnn===nnc
+.........
+@.......@
+.........
+xxxxxxxxx
 ENDMAP
 
 ##############################################################################
@@ -1911,7 +2045,7 @@ ENDMAP
 #
 NAME:    onia_ninara_swampy_vault
 TAGS:    no_pool_fixup no_monster_gen
-DEPTH:   Lair:4-, !Lair:$, Snake, !Snake:$
+DEPTH:   Lair:3-, !Lair:$, Snake, !Snake:$
 ORIENT:  float
 KMONS:   1 = tyrant leech / swamp worm w:50 / \
              vampire mosquito band / goliath frog / swamp drake w:15
@@ -2067,7 +2201,7 @@ ENDMAP
 # of opening the doors so animals can go for a walk, that's intended.
 #
 NAME:   slaughterhouse
-DEPTH:  Lair:5-, D:11-
+DEPTH:  Lair:3-, D:11-
 TAGS:   no_monster_gen
 ORIENT: float
 WEIGHT: 5
@@ -3619,7 +3753,7 @@ KMONS:  1 = red very ugly thing / white very ugly thing / \
             cyan very ugly thing w:15
 KMONS:  2 = fire dragon / ice dragon
 KMONS:  3 = dancing weapon ; broad axe ego:flaming | scimitar ego:freezing | \
-                             trident ego:electrocution | flail ego:vorpal
+                             trident ego:electrocution | flail ego:heavy
 KMONS:  4 = stone giant w:15 / fire giant / frost giant
 KMONS:  5 = spark wasp / catoblepas
 KMONS:  6 = storm dragon / iron dragon / titan / war gargoyle
@@ -3627,7 +3761,7 @@ KMONS:  7 = spriggan defender ; staff of fire | staff of cold | \
                                 staff of air | staff of earth . \
                                 robe ego:resistance good_item ident:type
 KMONS:  8 = tengu reaver ; battleaxe ego:flaming | great sword ego:freezing | \
-                           halberd ego:electrocution | lajatang ego:vorpal . \
+                           halberd ego:electrocution | lajatang ego:heavy . \
                            fire dragon scales | ice dragon scales
 KMONS:  9 = red draconian / white draconian / black draconian
 KMONS:  0 = red draconian monk / white draconian monk / black draconian monk
@@ -3750,7 +3884,7 @@ ENDMAP
 NAME:   minmay_shoctagon
 DEPTH:  D:12-, Elf, Depths
 ORIENT: float
-ITEM:   book of air / book of the sky / book of lightning / book of storms \
+ITEM:   book of air / book of lightning / book of storms \
         / manual of air magic / staff of air ident:all / lightning rod w:20 \
         / storm dragon scales w:5
 KITEM:  2 = arc blade / quick blade ego:electrocution randart ident:all \
@@ -3798,7 +3932,7 @@ ITEM:   book of geomancy / book of the earth / book of iron \
         / manual of earth magic / staff of earth ident:all \
         / ring of protection ident:all / tin of tremorstones \
         / crystal plate armour w:5
-KITEM:  2 = devastator / eveningstar ego:vorpal randart ident:all \
+KITEM:  2 = devastator / eveningstar ego:heavy randart ident:all \
         / dark maul
 : if you.in_branch("D") then
 :     if you.depth() < 13 then
@@ -3841,7 +3975,7 @@ ENDMAP
 NAME:   minmay_coctagon
 DEPTH:  D:10-, Elf, Depths
 ORIENT: float
-ITEM:   book of frost / book of ice / book of winter / book of rime \
+ITEM:   book of frost / book of ice / book of winter \
         / ozocubu's autobiography / book of the tundra / manual of ice magic \
         / wand of iceblast ident:all / staff of cold ident:all \
         / ring of ice ident:all / phial of floods / ice dragon scales w:5
@@ -4603,17 +4737,18 @@ txxxq'''.m....s....m.```qxxxt
 ENDMAP
 
 NAME:    gammafunk_sealed_library
-TAGS:    no_monster_gen no_trap_gen
+TAGS:    no_monster_gen no_trap_gen transparent
 # Allow placement in Vaults as a room.
 TAGS:    vaults_hard preserve_wall passable
 DEPTH:   Crypt, D:12-, Depths, Elf, Snake, Vaults, Zot
 ORIENT:  float
+KMASK:   -UT_QR12345defg|*$+ = opaque
 ITEM:    any book, any manual, any jewellery good_item
 ITEM:    robe good_item / cloak good_item / scarf good_item \
          / pair of boots good_item / pair of gloves good_item / hat good_item
 # Do this nsubst now so some branches can adjust monster placement.
-NSUBST:  4 = 1:4 / 2=433 / 2=53 / 3, 3 = 3:3 / 3=3222 / 2
-NSUBST:  ' = 1=d2 / 2, 2 = 2=211. / 6=2 / 4=2... / .
+NSUBST:  4 = 4 / 2=433 / 2=53 / 3, 3 = 3=3 / 3=3222 / 2
+NSUBST:  ' = d2 / 2, 2 = 2=211- / 6=2 / 4=2--- / -
 # Monster glyph counts after these nsubst:
 # 1:0-2 (ave 1.0), 2:6-12 (ave 7.5), 3:3-6 (ave 3.75), 4:1-3 (ave 1.66)
 # 5:0-2 (ave 1)
@@ -4655,7 +4790,8 @@ MONS:    glowing shapeshifter
 SUBST:   4 = 23, 5 = 4
 : elseif you.in_branch("Snake") then
 MONS:    mana viper / guardian serpent
-MONS:    naga mage / naga ritualist / salamander mystic, nagaraja
+MONS:    naga mage / naga ritualist / salamander mystic
+MONS:    nagaraja / salamander tyrant
 SUBST:   5 = 4, 4 = 23
 : elseif you.in_branch("Zot") then
 MONS:    ghost moth / death cob / curse toe
@@ -4673,21 +4809,21 @@ MARKER:  S = lua:transp_dest_loc("sealed_library_exit")
 MAP
 .........................
 .cccccccccncncnccccccccc.
-.cG.3c'c'c'c'c'c'c3..$Rc.
-.n.4...............b4$*c.
-.nT..bb2bb2bb2..2..bb..c.
-.n.4..........bbb.....Gn.
-.cG.3.Gc...bbbb...2.b3.c.
-.ccc+cccc+ccT...bbbbb..c.
-...nedUnG..c.....G.G.$tn..
-@.Pnfd_nQ..+........4|UnS@
-...ngdUnG..c.....G.G.$tn..
-.ccc+cccc+ccT...bbbbb..c.
-.cG.3.Gc...bbbb...2.b3.c.
-.n.4..........bbb.....Gn.
-.nT..bb2bb2bb2..2..bb..c.
-.n.4...............b4$*c.
-.cG.3c'c'c'c'c'c'c3..$Rc.
+.cG-3c'c'c'c'c'c'c3--$Rc.
+.n-4---------------b4$*c.
+.nT--bb2bb2bb2--2--bb--c.
+.n-4----------bbb-----Gn.
+.cG-3-Gc---bbbb---2-b3-c.
+.ccc+cccc+ccT---bbbbb--c.
+...nedUnG--c-----G-G-$tn..
+@.Pnfd_nQ--+--------4|UnS@
+...ngdUnG--c-----G-G-$tn..
+.ccc+cccc+ccT---bbbbb--c.
+.cG-3-Gc---bbbb---2-b3-c.
+.n-4----------bbb-----Gn.
+.nT--bb2bb2bb2--2--bb--c.
+.n-4---------------b4$*c.
+.cG-3c'c'c'c'c'c'c3--$Rc.
 .cccccccccncncnccccccccc.
 .........................
 ENDMAP
@@ -4955,7 +5091,7 @@ ENDMAP
 
 NAME:   nzn_motion_control
 TAGS:   no_pool_fixup no_monster_gen
-DEPTH:  D:10-, Lair:4-, Shoals:2-, !Shoals:$
+DEPTH:  D:10-, Lair:3-, Shoals:2-, !Shoals:$
 ORIENT: float
 SHUFFLE: HY / 12, $%, eE / rR
 SUBST:  ER = ., r = x, e = + .
@@ -6294,29 +6430,34 @@ ENDMAP
 # Oklob gauntlet
 # average of 2.2 oklobs, and at most 5 of them
 NAME:    dpeg_oklob_gauntlet
-DEPTH:   Depths, !Depths:$, Lair, Snake, Elf
+DEPTH:   Lair, Swamp
 ORIENT:  float
-MONS:    plant, oklob plant, thorn hunter, acid blob
+WEIGHT:  2
+MONS:    plant, oklob plant, thorn hunter
 SHUFFLE: ]}) / def
-NSUBST:  ' = 1:2 / 4 = 11122 / *:1
-NSUBST:  " = 1:W / * = wwW, ` = 1:W / * = wwW
-SUBST:   def = |*
-: if you.in_branch("Depths") then
-NSUBST:  3 = 1:3 / 1:4 / *:34...
+NSUBST:  ' = 2 / 4=11122 / 1, " = W / wwW, ` = W / wwW
+SUBST:   def = |*, } = }..
+: if you.in_branch("Lair") then
+SUBST:   3 = ., - = x-
+# Swamp
 : else
-SUBST:   3 = .
+NSUBST:  3 = 3 / 3.
+SUBST:   x = t, - = t-, + = .
 : end
+CLEAR:   -
 MAP
-xxxxxxxxxxxxx
-xxxxx]})xxxxx
-xxxxx.3.xxxxx
-x'ww3...3ww'x
-x'".......`'x
-x'".......`'x
-x'".......`'x
-x'".......`'x
-x'ww.....ww'x
-xxxxxx+xxxxxx
+---------------
+-xxxxxxxxxxxxx-
+-xxxxx]})xxxxx-
+-xxxxx.3.xxxxx-
+-x'ww3...3ww'x-
+-x'".......`'x-
+-x'".......`'x-
+-x'".......`'x-
+-x'".......`'x-
+-x'ww.....ww'x-
+-xxxxxx+xxxxxx-
+------- -------
 ENDMAP
 
 #############################################################################
@@ -9720,8 +9861,7 @@ ENDMAP
 NAME:    minmay_heptahexagon
 DEPTH:   D:12-, Depths
 ORIENT:  float
-ITEM:    book of debilitation / book of maledictions / book of hexes / \
-         book of misfortune
+ITEM:    book of debilitation / book of hexes / book of misfortune
 # randomize how open the hexagons are to each other
 SUBST:   M : xx+., N : +@, O : +++.
 # each hex other than the center either has monsters+loot, or nothing
@@ -9898,7 +10038,7 @@ xx...x...xx
 x9xxx.xxx9x
 x.x|x.x|x.x
 x.x.x.x.x.x
-x.xx8x8xx.x
+x.xm8x8mx.x
 xx.xxxxx.xx
  @xx   xx@
 ENDMAP
@@ -10293,11 +10433,12 @@ x.___x-;x..x;.``xw
 ENDMAP
 
 NAME:   gammafunk_sealed_arena
-TAGS:   no_monster_gen no_trap_gen
+TAGS:   no_monster_gen no_trap_gen transparent
 # Allow placement in Vaults as a room.
 TAGS:   vaults_hard preserve_wall passable
 DEPTH:  Crypt, D:8-, Depths, Elf, Shoals, Snake, Spider, Swamp, Vaults, Zot
 ORIENT: float
+KMASK:  -QR189de|*$ = opaque
 ITEM:   any jewellery good_item
 ITEM:   cloak good_item / scarf good_item / helmet good_item / hat good_item \
         / pair of gloves good_item / pair of boots good_item
@@ -10311,11 +10452,11 @@ MONS:   orange crystal statue / obsidian statue
 # on-average.  Elsewhere place one d item and one e item and don't reduce the 9
 # spawns.
 : if you.in_branch("D") and you.depth() < 12 then
-SUBST: 1 = 1..., 9 = 99., " = d, ' = $
+SUBST: 1 = 1---, 9 = 99-, " = d, ' = $
 : elseif you.in_branch("D") then
-SUBST: 1 = 1.
+SUBST: 1 = 1-
 : end
-SUBST:  " = $, h : b., i : b.
+SUBST:  " = $, h : b-, i : b-
 : if you.in_branch("Spider") or you.in_branch("Swamp") then
 SUBST:  b : cx
 : else
@@ -10329,15 +10470,15 @@ MARKER: S = lua:transp_dest_loc("sealed_arena_exit")
 MAP
   ...........
  ..nnnnnnnnn..
- .nn9......nn.
- .nG.hi9ih.Gn.
- .n..ih.hi$*n.
-..n9.....8'|n..
-@Pn..Q.1.."RnS@
-..n9.....8'|n..
- .n..ih.hi$*n.
- .nG.hi9ih.Gn.
- .nn9......nn.
+ .nn9------nn.
+ .nG-hi9ih-Gn.
+ .n--ih-hi$*n.
+..n9-----8'|n..
+@Pn--Q-1--"RnS@
+..n9-----8'|n..
+ .n--ih-hi$*n.
+ .nG-hi9ih-Gn.
+ .nn9------nn.
  ..nnnnnnnnn..
   ...........
 ENDMAP
@@ -11418,4 +11559,83 @@ cG----Gc
 ccc++ccc
 ..t..t..
  ..@@..
+ENDMAP
+
+NAME:   nicolae_fronds_of_death
+TAGS:   transparent
+DEPTH:  D:12-, Depths
+ORIENT: float
+SUBST:  0 = ....0009, 9 = .....99998, % = %%%%***|
+MAP
+ccccc                 ccccc
+cG%%ccc             ccc%%Gc
+c%..v9ccc         ccc9v..%c
+c%.8..+9ccc @@@ ccc9+..8.%c
+ccv...v.+9ccc.ccc9+.v...vcc
+ c9..9..x.+0c+c0+.x..9..9c
+ cc+v...v.x.+.+.x.v...v+cc
+  c9...0..x.x.x.x..0...9c
+  cc+xv...v0x.x0v...vx+cc
+   c9....0..x.x..0....9c
+   cc+xxv...v0v...vxx+cc
+    c0..0..0...0..0...c
+   @cc+xxxv.....vxxx+cc@
+   @.+....0..G..0....+.@
+   @cc+xxxv.....vxxx+cc@
+    c0..0..0...0..0..0c
+   cc+xxv...v0v...vxx+cc
+   c9....0..x.x..0....9c
+  cc+xv...v0x.x0v...vx+cc
+  c9...0..x.x.x.x..0...9c
+ cc+v...v.x.+.+.x.v...v+cc
+ c8..9..x.+.c+c.+.x..9..8c
+ccv...v.+9ccc.ccc9+.v...vcc
+c%.8..+9ccc @@@ ccc9+..8.%c
+c%..v8ccc         ccc8v..%c
+cG%%ccc             ccc%%Gc
+ccccc                 ccccc
+ENDMAP
+
+NAME:   nicolae_herringbone
+TAGS:   transparent
+DEPTH:  Depths
+ORIENT: float
+SUBST:  T = .U V:30 T:130, - = |**%%%$$$$, \
+        0 = .:50 0, 9 = .:50 9, 8 = .:50 8
+MAP
+      c           c           c
+     ccc         ccc         ccc
+    cc-cc       cc-cc       cc-cc
+   cc-..cc     cc-..cc     cc-..cc
+  cc-....cc   cc-....cc   cc-....cc
+ cc-.888..cc cc-.888..cc cc-.888..cc
+cc-..8T8...ccc-..8T8...ccc-..8T8...cc
+ cc..888....ccc..888....ccc..888....cc
+  cc......9..ccc......9..ccc......9..cc
+   cc....999..ccc....999..ccc....999..cc
+    cc..99T99..ccc..99T99..ccc..99T99..cc
+     cc..999..0.ccc..999..0.ccc..999..0.cc
+      cc..9..000.ccc..9..000.ccc..9..000.cc
+       cc...00000.ccc...00000.ccc...00000.cc
+        cc.000T000.ccc.000T000.ccc.000T000.cc
+       cc+c.00000.c+c+c.00000.c+c+c.00000.c+cc
+      cc.c+c.000.c+c.c+c.000.c+c.c+c.000.c+c.cc
+     cc...c+c.0.c+c.0.c+c.0.c+c.0.c+c.0.c+c.0.cc
+    cc..0..c+c.c+c.000.c+c.c+c.000.c+c.c+c.000.cc
+   cc..000..c+c+c.00000.c+c+c.00000.c+c+c.00000.cc
+  cc@.00T00..ccc.000T000.ccc.000T000.ccc.000T000.cc
+     @.000..ccc...00000.ccc...00000.ccc...00000.cc
+      @.0..ccc..9..000.ccc..9..000.ccc..9..000.cc
+       @..ccc..999..0.ccc..999..0.ccc..999..0.cc
+        @ccc..99T99..ccc..99T99..ccc..99T99..cc
+        ccc....999..ccc....999..ccc....999..cc
+        cc......9..ccc......9..ccc......9..cc
+       cc..888....ccc..888....ccc..888....cc
+      cc-..8T8...ccc-..8T8...ccc-..8T8...cc
+       cc-.888..cc cc-.888..cc cc-.888..cc
+        cc-....cc   cc-....cc   cc-....cc
+         cc-..cc     cc-..cc     cc-..cc
+          cc-cc       cc-cc       cc-cc
+           ccc         ccc         ccc
+            c           c           c
 ENDMAP

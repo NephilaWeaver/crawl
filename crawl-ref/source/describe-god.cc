@@ -262,8 +262,8 @@ string god_title(god_type which_god, species_type which_species, int piety)
     {
         { "Adj", species::name(which_species, species::SPNAME_ADJ) },
         { "Genus", species::name(which_species, species::SPNAME_GENUS) },
-        { "Walking", species::walking_verb(which_species) + "ing" },
-        { "Walker", species::walking_verb(which_species) + "er" },
+        { "Walking", species::walking_title(which_species) + "ing" },
+        { "Walker", species::walking_title(which_species) + "er" },
     };
 
     return replace_keys(title, replacements);
@@ -818,6 +818,14 @@ static formatted_string _describe_god_powers(god_type which_god)
 
         desc.cprintf("%s %s shields you from chaos.\n",
                 uppercase_first(god_name(which_god)).c_str(), how);
+
+        how =
+            (piety >= piety_breakpoint(5)) ? "often" :
+            (piety >= piety_breakpoint(3)) ? "sometimes" :
+            (piety >= piety_breakpoint(1)) ? "occasionally" :
+                                             "rarely";
+        desc.cprintf("%s %s shields you from Hell.\n",
+                uppercase_first(god_name(which_god)).c_str(), how);
         break;
     }
 
@@ -938,29 +946,6 @@ static formatted_string _describe_god_powers(god_type which_god)
         desc.cprintf("Your ancestor manifests to aid you.\n");
     }
         break;
-
-#if TAG_MAJOR_VERSION == 34
-    case GOD_PAKELLAS:
-    {
-        have_any = true;
-        desc.cprintf("%s prevents your magic from regenerating.\n",
-                uppercase_first(god_name(which_god)).c_str());
-        desc.cprintf("%s identifies device charges for you.\n",
-                uppercase_first(god_name(which_god)).c_str());
-        if (you.can_drink(false))
-        {
-            if (have_passive(passive_t::bottle_mp))
-                desc.textcolour(god_colour(which_god));
-            else
-                desc.textcolour(DARKGREY);
-
-            desc.cprintf("%s will collect and distill excess magic from your "
-                    "kills.\n",
-                    uppercase_first(god_name(which_god)).c_str());
-        }
-        break;
-    }
-#endif
 
     case GOD_LUGONU:
         have_any = true;
@@ -1099,26 +1084,20 @@ static void build_partial_god_ui(god_type which_god, shared_ptr<ui::Popup>& popu
         _god_extra_description(which_god)
     };
 
-#ifdef USE_TILE_LOCAL
-# define MORE_PREFIX "[<w>!</w>/<w>^</w>" "|<w>Right-click</w>" "]: "
-#else
-# define MORE_PREFIX "[<w>!</w>/<w>^</w>" "]: "
-#endif
-
     int mores_index = descs[3].empty() ? 0 : 1;
     const char* mores[2][4] =
     {
         {
-            MORE_PREFIX "<w>Overview</w>|Powers|Wrath",
-            MORE_PREFIX "Overview|<w>Powers</w>|Wrath",
-            MORE_PREFIX "Overview|Powers|<w>Wrath</w>",
-            MORE_PREFIX "Overview|Powers|Wrath"
+            "[<w>!</w>]: <w>Overview</w>|Powers|Wrath",
+            "[<w>!</w>]: Overview|<w>Powers</w>|Wrath",
+            "[<w>!</w>]: Overview|Powers|<w>Wrath</w>",
+            "[<w>!</w>]: Overview|Powers|Wrath"
         },
         {
-            MORE_PREFIX "<w>Overview</w>|Powers|Wrath|Extra",
-            MORE_PREFIX "Overview|<w>Powers</w>|Wrath|Extra",
-            MORE_PREFIX "Overview|Powers|<w>Wrath</w>|Extra",
-            MORE_PREFIX "Overview|Powers|Wrath|<w>Extra</w>"
+            "[<w>!</w>]: <w>Overview</w>|Powers|Wrath|Extra",
+            "[<w>!</w>]: Overview|<w>Powers</w>|Wrath|Extra",
+            "[<w>!</w>]: Overview|Powers|<w>Wrath</w>|Extra",
+            "[<w>!</w>]: Overview|Powers|Wrath|<w>Extra</w>"
         }
     };
 
@@ -1190,15 +1169,15 @@ static void _send_god_ui(god_type god, bool is_altar)
     tiles.json_write_string("favour", you_worship(god) ?
             _describe_favour(god) : _god_penance_message(god));
     tiles.json_write_string("powers_list",
-            _describe_god_powers(god).to_colour_string());
+            _describe_god_powers(god).to_colour_string(LIGHTGREY));
     tiles.json_write_string("info_table", "");
 
     tiles.json_write_string("powers",
-            _detailed_god_description(god).to_colour_string());
+            _detailed_god_description(god).to_colour_string(LIGHTGREY));
     tiles.json_write_string("wrath",
-            _god_wrath_description(god).to_colour_string());
+            _god_wrath_description(god).to_colour_string(LIGHTGREY));
     tiles.json_write_string("extra",
-            _god_extra_description(god).to_colour_string());
+            _god_extra_description(god).to_colour_string(LIGHTGREY));
     tiles.json_write_string("service_fee",
             _god_service_fee_description(god));
     tiles.push_ui_layout("describe-god", 1);
@@ -1221,7 +1200,7 @@ void describe_god(god_type which_god)
     bool done = false;
     popup->on_keydown_event([&](const KeyEvent& ev) {
         const auto key = ev.key();
-        if (key == '!' || key == CK_MOUSE_CMD || key == '^')
+        if (key == '!' || key == '^')
         {
             int n = (desc_sw->current() + 1) % desc_sw->num_children();
             desc_sw->current() = more_sw->current() = n;
@@ -1232,7 +1211,7 @@ void describe_god(god_type which_god)
 #endif
             return true;
         }
-        return done = !desc_sw->current_widget()->on_event(ev);
+        return done = ui::key_exits_popup(key, false);
     });
 
 #ifdef USE_TILE_WEB
@@ -1298,9 +1277,9 @@ bool describe_god_with_join(god_type which_god)
         const auto keyin = ev.key();
 
         // Always handle escape and pane-switching keys the same way
-        if (keyin == CK_ESCAPE)
+        if (ui::key_exits_popup(keyin, false))
             return done = true;
-        if (keyin == '!' || keyin == CK_MOUSE_CMD || keyin == '^')
+        if (keyin == '!' || keyin == '^')
         {
             int n = (desc_sw->current() + 1) % desc_sw->num_children();
             desc_sw->current() = n;
@@ -1321,8 +1300,8 @@ bool describe_god_with_join(god_type which_god)
         // Next, allow child widgets to handle scrolling keys
         // NOTE: these key exceptions are also specified in ui-layouts.js
         if (keyin != 'J' && keyin != CK_ENTER)
-        if (desc_sw->current_widget()->on_event(ev))
-            return true;
+            if (desc_sw->current_widget()->on_event(ev))
+                return true;
 
         if (step == ABANDON)
         {

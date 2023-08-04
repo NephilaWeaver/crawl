@@ -73,7 +73,8 @@ spret cast_death_channel(int pow, god_type god, bool fail)
     fail_check();
     mpr("Malign forces permeate your being, awaiting release.");
 
-    you.increase_duration(DUR_DEATH_CHANNEL, 30 + random2(1 + 2*pow/3), 200);
+    you.increase_duration(DUR_DEATH_CHANNEL,
+                          30 + random2(1 + div_rand_round(2 * pow, 3)), 200);
 
     if (god != GOD_NO_GOD)
         you.attribute[ATTR_DIVINE_DEATH_CHANNEL] = static_cast<int>(god);
@@ -200,32 +201,27 @@ bool try_recall(mid_t mid)
     // Either it's dead or off-level.
     if (!mons)
         return recall_offlevel_ally(mid);
-    else if (mons->alive())
+    if (!mons->alive())
+        return false;
+    // Don't recall monsters that are already close to the player
+    if (mons->pos().distance_from(you.pos()) < 3
+        && mons->see_cell_no_trans(you.pos()))
     {
-        // Don't recall monsters that are already close to the player
-        if (mons->pos().distance_from(you.pos()) < 3
-            && mons->see_cell_no_trans(you.pos()))
-        {
-            recall_orders(mons);
-            return false;
-        }
-        else
-        {
-            coord_def empty;
-            if (find_habitable_spot_near(you.pos(), mons_base_type(*mons), 3, false, empty)
-                && mons->move_to_pos(empty))
-            {
-                recall_orders(mons);
-                simple_monster_message(*mons, " is recalled.");
-                mons->apply_location_effects(mons->pos());
-                // mons may have been killed, shafted, etc,
-                // but they were still recalled!
-                return true;
-            }
-        }
+        recall_orders(mons);
+        return false;
     }
-
-    return false;
+    coord_def empty;
+    if (!find_habitable_spot_near(you.pos(), mons->type, 3, false, empty)
+        || !mons->move_to_pos(empty))
+    {
+        return false;
+    }
+    recall_orders(mons);
+    simple_monster_message(*mons, " is recalled.");
+    mons->apply_location_effects(mons->pos());
+    // mons may have been killed, shafted, etc,
+    // but they were still recalled!
+    return true;
 }
 
 // Attempt to recall a number of allies proportional to how much time
@@ -490,7 +486,7 @@ static int _intoxicate_monsters(coord_def where, int pow, bool tracer)
     if (!tracer && monster_resists_this_poison(*mons))
         return 0;
 
-    if (!tracer && x_chance_in_y(40 + pow/3, 100))
+    if (!tracer && x_chance_in_y(40 + div_rand_round(pow, 3), 100))
     {
         mons->add_ench(mon_enchant(ENCH_CONFUSION, 0, &you));
         simple_monster_message(*mons, " looks rather confused.");

@@ -17,9 +17,9 @@
 #include "item-status-flag-type.h"
 #include "items.h"
 #include "libutil.h" // map_find
+#include "misc.h" // december_holidays
 #include "mon-place.h"
 #include "mpr.h"
-#include "randbook.h" // roxanne, roxanne...
 #include "religion.h" // upgrade_hepliaklqana_weapon
 #include "state.h"
 #include "tag-version.h"
@@ -104,25 +104,37 @@ static bool _should_give_unique_item(monster* mon)
     return mon->type != MONS_NATASHA || !mon->props.exists(FELID_REVIVES_KEY);
 }
 
-static void _give_book(monster* mon, int level)
+static talisman_type _talisman_for(monster_type mtyp)
 {
-    if (mon->type == MONS_ROXANNE)
+    switch (mtyp)
     {
-        // Statue form books, heh.
-        const int which_book = (one_chance_in(3) ? BOOK_SLOTH
-                                                 : BOOK_EARTH);
-
-        const int thing_created = items(false, OBJ_BOOKS, which_book, level);
-
-        if (thing_created == NON_ITEM)
-            return;
-
-        // Maybe give Roxanne a random book containing Statue Form instead.
+    case MONS_RUPERT:
         if (coinflip())
-            make_book_roxanne_special(&env.item[thing_created]);
-
-        give_specific_item(mon, thing_created);
+            return TALISMAN_MAW; // good for shoutin'
+        break;
+    case MONS_AIZUL:
+        return TALISMAN_SERPENT; // late, but so thematic!
+    case MONS_ROXANNE:
+        return TALISMAN_STATUE;
+    case MONS_SOJOBO:
+        if (coinflip())
+            return TALISMAN_STORM;
+        break;
+    case MONS_BAI_SUZHEN:
+        if (coinflip())
+            return TALISMAN_DRAGON;
+        break;
+    default:
+        break;
     }
+    return NUM_TALISMANS;
+}
+
+static void _give_talisman(monster* mon, int level)
+{
+    const talisman_type talisman = _talisman_for(mon->type);
+    if (talisman != NUM_TALISMANS)
+        give_specific_item(mon, items(false, OBJ_TALISMANS, talisman, level));
 }
 
 static void _give_wand(monster* mon, int level)
@@ -151,6 +163,13 @@ static void _give_wand(monster* mon, int level)
         return;
 
     item_def& wand = env.item[idx];
+    // Ugly hack: monsters can't use digging wands, so swap em out.
+    while (wand.sub_type == WAND_DIGGING)
+    {
+        dprf("rerolling");
+        generate_wand_item(wand, OBJ_RANDOM, level);
+        item_colour(wand);
+    }
 
     const char* rejection_reason =
         (no_high_tier && is_high_tier_wand(wand.sub_type)) ? "high tier" :
@@ -170,22 +189,6 @@ static void _give_wand(monster* mon, int level)
 
     wand.flags = 0;
     give_specific_item(mon, idx);
-}
-
-static void _give_potion(monster* mon, int level)
-{
-    if (mons_is_unique(mon->type) && one_chance_in(4)
-                && _should_give_unique_item(mon))
-    {
-        const int thing_created = items(false, OBJ_POTIONS, OBJ_RANDOM,
-                                        level);
-
-        if (thing_created == NON_ITEM)
-            return;
-
-        env.item[thing_created].flags = 0;
-        give_specific_item(mon, thing_created);
-    }
 }
 
 static item_def* make_item_for_monster(
@@ -388,7 +391,7 @@ int make_mons_weapon(monster_type type, int level, bool melee_only)
     static const vector<pair<brand_type, int>> HELL_KNIGHT_BRANDS = // sum 45
     {   { SPWPN_FLAMING,        13 },
         { SPWPN_DRAINING,       4 },
-        { SPWPN_VORPAL,         4 },
+        { SPWPN_HEAVY,          4 },
         { SPWPN_DISTORTION,     2 },
         { SPWPN_PAIN,           2 },
         { NUM_SPECIAL_WEAPONS,  20 }, // 5/9 chance of brand
@@ -501,7 +504,10 @@ int make_mons_weapon(monster_type type, int level, bool melee_only)
             { 1, 2, 4 },
             { { SPWPN_CHAOS, 1 } } } },
         { MONS_JOSEPH, { { { WPN_QUARTERSTAFF, 1 } } } },
-        { MONS_SPRIGGAN_DRUID, { { { WPN_QUARTERSTAFF, 1 } } } },
+        { MONS_SPRIGGAN_DRUID, { { { WPN_QUARTERSTAFF, 1 } }, {}, {
+                { SPWPN_SPECTRAL, 1 },
+                { NUM_SPECIAL_WEAPONS, 5 }
+        } } },
         { MONS_BAI_SUZHEN, { { { WPN_QUARTERSTAFF, 1 } } } },
         { MONS_ORC,                     { ORC_WEAPONS } },
         { MONS_ORC_PRIEST,              { ORC_WEAPONS } },
@@ -525,7 +531,7 @@ int make_mons_weapon(monster_type type, int level, bool melee_only)
               { WPN_DEMON_TRIDENT,      1 },
               { WPN_MORNINGSTAR,        1 },
               { WPN_BROAD_AXE,          1 }, },
-            {}, {}, 1,
+            {}, { { SPWPN_SPECTRAL, 1 } }, 1,
         } },
         { MONS_AMAEMON, {
             { { WPN_DEMON_WHIP,       1 } },
@@ -668,10 +674,13 @@ int make_mons_weapon(monster_type type, int level, bool melee_only)
             { { { WPN_TRIDENT,          1 },
                 { WPN_SPEAR,            2 },
         } } },
-        { MONS_CENTAUR, { { { WPN_SHORTBOW, 1 } } } },
+        { MONS_CENTAUR,
+            { { { WPN_SHORTBOW,         1 },
+                { WPN_ORCBOW,           1 },
+        } } },
         { MONS_CENTAUR_WARRIOR,
-            { { { WPN_SHORTBOW,         2 },
-                { WPN_LONGBOW,          1 },
+            { { { WPN_SHORTBOW,         1 },
+                { WPN_ORCBOW,           1 },
         } } },
         { MONS_FAUN,                    { FAUN_WEAPONS } },
         { MONS_SATYR,                   { FAUN_WEAPONS } },
@@ -774,6 +783,7 @@ int make_mons_weapon(monster_type type, int level, bool melee_only)
               HELL_KNIGHT_BRANDS
         } },
         { MONS_URUG,                    { URUG_WEAPONS } },
+        { MONS_NORRIS,                  { URUG_WEAPONS } },
         { MONS_FREDERICK,               { URUG_WEAPONS } },
         { MONS_FIRE_GIANT, {
             { { WPN_GREAT_SWORD,        1 } }, {},
@@ -853,7 +863,7 @@ int make_mons_weapon(monster_type type, int level, bool melee_only)
               { WPN_GREAT_SWORD,        1 }, },
             { 1, 0, 3 },
             { { SPWPN_DRAINING,      13 }, // total 45
-              { SPWPN_VORPAL,        7 },
+              { SPWPN_HEAVY,         7 },
               { SPWPN_FREEZING,      4 },
               { SPWPN_FLAMING,       4 },
               { SPWPN_PAIN,          2 },
@@ -920,25 +930,28 @@ int make_mons_weapon(monster_type type, int level, bool melee_only)
             { { SPWPN_NORMAL,         20 },
               { SPWPN_FLAMING,        20 },
               { SPWPN_FREEZING,       10 },
-              { SPWPN_VORPAL  ,       10 },
+              { SPWPN_HEAVY,          10 },
               { SPWPN_ELECTROCUTION,  10 },
               { SPWPN_VENOM,          10 },
               { SPWPN_VAMPIRISM,       5 },
               { SPWPN_ANTIMAGIC,       5 },
+              { SPWPN_SPECTRAL,        5 },
               { SPWPN_PAIN,            4 },
               { SPWPN_HOLY_WRATH,      3 },
               { SPWPN_DISTORTION,      2 },
               { SPWPN_CHAOS,           1 }, },
         } },
+        { MONS_CERULEAN_IMP,  { { { WPN_SPEAR, 1 } }, {}, { { SPWPN_NORMAL, 1 } } } },
     };
 
     static const weapon_list ORC_KNIGHT_BOWS =
     {   { WPN_ARBALEST,                 1 },
         { NUM_WEAPONS,                  8 }, }; // 1/9 chance of ranged weapon
 
+
     static const map<monster_type, mon_weapon_spec> secondary_weapon_specs = {
         { MONS_JOSEPH, { { { WPN_SLING, 1 } } } },
-        { MONS_DEEP_ELF_ARCHER, // XXX: merge w/centaur warrior primary?
+        { MONS_DEEP_ELF_ARCHER,
             { { { WPN_SHORTBOW,         3 },
                 { WPN_LONGBOW,          1 },
         } } },
@@ -951,15 +964,18 @@ int make_mons_weapon(monster_type type, int level, bool melee_only)
                 { WPN_ARBALEST,         2 },
                 { WPN_LONGBOW,          1 }
         } } },
-        { MONS_VAULT_WARDEN,            { ORC_KNIGHT_BOWS } },
+        { MONS_VAULT_WARDEN,            { { { WPN_ARBALEST, 1 }, { NUM_WEAPONS, 8 }} } },
         { MONS_ORC_WARLORD,             { ORC_KNIGHT_BOWS } },
         { MONS_SAINT_ROKA,              { ORC_KNIGHT_BOWS } },
         { MONS_ORC_KNIGHT,              { ORC_KNIGHT_BOWS } },
-        { MONS_ORC_WARRIOR,             { ORC_KNIGHT_BOWS } },
+        { MONS_ORC_WARRIOR,
+            { { { WPN_ORCBOW,           3 },
+                { WPN_ARBALEST,         1 },
+                { NUM_WEAPONS,          32 }
+        } } },
         { MONS_TENGU_WARRIOR,
-            { { { WPN_ARBALEST,                 3 },
-                { WPN_LONGBOW,                  1 },
-                { NUM_WEAPONS,                  32 }, // 1/9 chance of weap
+            { { { WPN_ARBALEST,                 1 },
+                { NUM_WEAPONS,                  8 }, // 1/9 chance of weap
         } } },
         { MONS_VAULT_SENTINEL,
             { { { WPN_ARBALEST,                 19 },
@@ -1063,7 +1079,7 @@ int make_mons_weapon(monster_type type, int level, bool melee_only)
         {
             item.base_type = OBJ_WEAPONS;
             item.sub_type = WPN_QUARTERSTAFF;
-            set_item_ego_type(item, OBJ_WEAPONS, SPWPN_VORPAL);
+            set_item_ego_type(item, OBJ_WEAPONS, SPWPN_HEAVY);
         }
         item.flags |= ISFLAG_KNOW_TYPE;
         break;
@@ -1153,11 +1169,6 @@ int make_mons_weapon(monster_type type, int level, bool melee_only)
         make_item_unrandart(item, UNRAND_CEREBOV);
         break;
 
-    case MONS_DISPATER:
-        force_item = true;
-        make_item_unrandart(item, UNRAND_DISPATER);
-        break;
-
     case MONS_ASMODEUS:
         force_item = true;
         make_item_unrandart(item, UNRAND_ASMODEUS);
@@ -1221,8 +1232,16 @@ int make_mons_weapon(monster_type type, int level, bool melee_only)
     case MONS_SIGMUND:
     case MONS_REAPER:
         custom_name = "scythe";
-        floor_tile  = "wpn_scythe";
-        equip_tile  = "scythe";
+        if (type == MONS_SIGMUND && december_holidays())
+        {
+            floor_tile  = "wpn_xmas_scythe";
+            equip_tile  = "xmas_scythe";
+        }
+        else
+        {
+            floor_tile  = "wpn_scythe";
+            equip_tile  = "scythe";
+        }
         break;
 
     case MONS_ANCESTOR_HEXER:
@@ -1547,6 +1566,13 @@ static void _give_shield(monster* mon, int level)
         make_item_for_monster(mon, OBJ_ARMOUR, ARM_KITE_SHIELD,
                               level * 2 + 1, 1);
         break;
+
+    case MONS_DISPATER:
+        shield = make_item_for_monster(mon, OBJ_ARMOUR, ARM_ORB, level);
+        if (shield)
+            make_item_unrandart(*shield, UNRAND_DISPATER);
+        break;
+
     case MONS_DAEVA:
     case MONS_MENNAS:
         make_item_for_monster(mon, OBJ_ARMOUR, ARM_TOWER_SHIELD,
@@ -2209,9 +2235,8 @@ void give_item(monster *mons, int level_number, bool mons_summoned)
     ASSERT(level_number > -1); // debugging absdepth0 changes
 
     _give_gold(mons, level_number);
-    _give_book(mons, level_number);
+    _give_talisman(mons, level_number);
     _give_wand(mons, level_number);
-    _give_potion(mons, level_number);
     _give_weapon(mons, level_number);
     _give_ammo(mons, level_number, mons_summoned);
     _give_armour(mons, 1 + level_number / 2);

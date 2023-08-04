@@ -91,7 +91,7 @@ static const vector<pop_entry> population[] =
   {  4,  7, 1000, PEAK, MONS_IGUANA },
   {  4,  7,  350, PEAK, MONS_PHANTOM },
   {  4,  8,  500, PEAK, MONS_JELLY },
-  {  4,  8,  350, PEAK, MONS_NECROPHAGE },
+  {  4,  8,  350, PEAK, MONS_SLEEPCAP },
   {  4,  8,  350, PEAK, MONS_BLACK_BEAR },
 
   {  4, 10,  200, PEAK, MONS_GNOLL_BOUDA },
@@ -131,13 +131,13 @@ static const vector<pop_entry> population[] =
   { 11, 21,  825, SEMI, MONS_CYCLOPS },
   { 11, 21,  285, PEAK, MONS_BASILISK },
   { 11, 21,  192, PEAK, MONS_SKELETAL_WARRIOR },
-  { 11, 23,  540, SEMI, MONS_HYDRA },
   { 11, 23,  540, SEMI, MONS_BOULDER_BEETLE},
   { 12, 19,  475, SEMI, MONS_DEEP_ELF_FIRE_MAGE },
   { 12, 22,  440, FALL, MONS_SLIME_CREATURE },
   { 13, 20,  150, SEMI, MONS_MELIAI },
   { 13, 21,  192, PEAK, MONS_DEATH_KNIGHT },
   { 13, 21,   89, PEAK, MONS_RAKSHASA },
+  { 13, 23,  540, SEMI, MONS_HYDRA },
   { 13, 17,  925, FLAT, MONS_CENTAUR_WARRIOR },
   { 18, 23,  925, FALL, MONS_CENTAUR_WARRIOR },
   { 13, 19,  365, SEMI, MONS_TENGU_WARRIOR },
@@ -198,7 +198,6 @@ static const vector<pop_entry> population[] =
 },
 
 { // Orcish Mines
-  {  1,  4,  384, FLAT, MONS_NO_MONSTER },
   {  1,  4,  192, FLAT, MONS_ORC_WARRIOR },
   {  1,  4,   25, FLAT, MONS_ORC_PRIEST },
   {  1,  4,   25, FLAT, MONS_ORC_WIZARD },
@@ -259,43 +258,43 @@ static const vector<pop_entry> population[] =
 },
 #endif
 
-{ // Lair (OOD cap: 12)
-  {  1,  5, 4500, FLAT, MONS_NO_MONSTER }, // Roughly old D:1-4 chaff weight
-  { -1,  5,  100, SEMI, MONS_BLACK_BEAR },
-  { -1,  7,  310, SEMI, MONS_BASILISK },
-  {  0,  4,   24, PEAK, MONS_SCORPION },
-  {  0,  6,  310, SEMI, MONS_WOLF },
-  {  0,  9,  290, PEAK, MONS_RIME_DRAKE },
-  {  0, 11,  380, SEMI, MONS_BLACK_MAMBA },
-  {  1,  5, 1000, FLAT, MONS_BULLFROG },
-  {  1,  6,  990, FLAT, MONS_WATER_MOCCASIN },
-  {  1,  6,  565, FLAT, MONS_YAK },
-  {  1,  7,  340, PEAK, MONS_WYVERN },
-  {  1,  8,  380, SEMI, MONS_BLINK_FROG },
-  {  1,  6,  900, FLAT, MONS_CANE_TOAD },
-  {  1,  6,  615, FLAT, MONS_KOMODO_DRAGON },
-  {  1,  8,   50, PEAK, MONS_HELL_RAT },
-  {  1,  8,  150, SEMI, MONS_POLAR_BEAR },
-  {  1, 11,  400, SEMI, MONS_HYDRA },
-  {  2,  5,   16, PEAK, MONS_HORNET },
-  {  2,  5,   50, PEAK, MONS_STEAM_DRAGON },
-  {  2,  7,   25, PEAK, MONS_OKLOB_PLANT },
-  {  2,  9,  290, PEAK, MONS_ELEPHANT },
-  {  2, 10,  210, RISE, MONS_DEATH_YAK },
-  {  2, 11,   70, SEMI, MONS_CATOBLEPAS },
-  {  2, 16,   70, SEMI, MONS_BOULDER_BEETLE },
-  {  2, 16,   85, SEMI, MONS_TORPOR_SNAIL },
-  {  3,  8,   75, SEMI, MONS_POLAR_BEAR },
-  {  3, 10,   50, PEAK, MONS_LINDWURM },
-  {  4, 12,  140, SEMI, MONS_DREAM_SHEEP },
-  {  4, 16,   36, RISE, MONS_FIRE_CRAB },
-  {  7, 10,  160, FLAT, MONS_CANE_TOAD },
-  {  7, 10,  160, FLAT, MONS_KOMODO_DRAGON },
-  { 11, 12,   32, FLAT, MONS_DIRE_ELEPHANT },
-  { 11, 12,   32, FLAT, MONS_ALLIGATOR },
-  { 11, 12,   32, FLAT, MONS_MANTICORE },
-  { 11, 12,   32, FLAT, MONS_ANACONDA },
-  { 11, 12,   32, FLAT, MONS_WOLF_SPIDER },
+{ // Lair (OOD cap: 11)
+  { -2,  4,  100, SEMI, MONS_BLACK_BEAR },
+  { -2,  6,  310, SEMI, MONS_BASILISK },
+  { -1,  3,   24, PEAK, MONS_SCORPION },
+  { -1,  5,  310, SEMI, MONS_WOLF },
+  { -1,  8,  290, PEAK, MONS_RIME_DRAKE },
+  { -1, 10,  380, SEMI, MONS_BLACK_MAMBA },
+  {  0,  4, 1000, FLAT, MONS_BULLFROG },
+  {  0,  5,  990, FLAT, MONS_WATER_MOCCASIN },
+  {  0,  5,  565, FLAT, MONS_YAK },
+  {  0,  6,  340, PEAK, MONS_WYVERN },
+  {  0,  7,  380, SEMI, MONS_BLINK_FROG },
+  {  0,  5,  900, FLAT, MONS_CANE_TOAD },
+  {  0,  5,  615, FLAT, MONS_KOMODO_DRAGON },
+  {  0,  7,   50, PEAK, MONS_HELL_RAT },
+  {  0,  7,  150, SEMI, MONS_POLAR_BEAR },
+  {  1,  4,   16, PEAK, MONS_HORNET },
+  {  1,  4,   50, PEAK, MONS_STEAM_DRAGON },
+  {  1,  6,   25, PEAK, MONS_OKLOB_PLANT },
+  {  1,  8,  290, PEAK, MONS_ELEPHANT },
+  {  1,  9,  210, RISE, MONS_DEATH_YAK },
+  {  1, 10,   70, SEMI, MONS_CATOBLEPAS },
+  {  1, 15,   70, SEMI, MONS_BOULDER_BEETLE },
+  {  1, 15,   85, SEMI, MONS_TORPOR_SNAIL },
+  {  2,  7,   75, SEMI, MONS_POLAR_BEAR },
+  {  2,  7,  200, SEMI, MONS_SKYSHARK },
+  {  2,  9,   50, PEAK, MONS_LINDWURM },
+  {  2, 10,  400, SEMI, MONS_HYDRA },
+  {  3, 11,  140, SEMI, MONS_DREAM_SHEEP },
+  {  3, 15,   36, RISE, MONS_FIRE_CRAB },
+  {  6,  9,  160, FLAT, MONS_CANE_TOAD },
+  {  6,  9,  160, FLAT, MONS_KOMODO_DRAGON },
+  { 10, 11,   32, FLAT, MONS_DIRE_ELEPHANT },
+  { 10, 11,   32, FLAT, MONS_ALLIGATOR },
+  { 10, 11,   32, FLAT, MONS_MANTICORE },
+  { 10, 11,   32, FLAT, MONS_ANACONDA },
+  { 10, 11,   32, FLAT, MONS_WOLF_SPIDER },
 },
 
 { // Swamp
@@ -353,6 +352,7 @@ static const vector<pop_entry> population[] =
 { // Shoals
   {  0,  3,   89, SEMI, MONS_CENTAUR_WARRIOR },
   {  0,  3,  355, SEMI, MONS_FAUN },
+  {  0,  3,  400, SEMI, MONS_SKYSHARK },
   {  0,  6,  300, SEMI, MONS_WATER_NYMPH },
   {  0,  6,  170, SEMI, MONS_MERFOLK_AVATAR },
   {  0,  6,  110, SEMI, MONS_CYCLOPS },
@@ -370,6 +370,7 @@ static const vector<pop_entry> population[] =
   {  1,  7,  135, PEAK, MONS_MERFOLK_JAVELINEER },
   {  1,  7,  110, PEAK, MONS_ALLIGATOR_SNAPPING_TURTLE },
   {  2,  4,  190, SEMI, MONS_SATYR },
+  {  3,  7,   30, PEAK, MONS_FORMLESS_JELLYFISH },
 },
 
 { // Snake Pit
@@ -453,6 +454,7 @@ static const vector<pop_entry> population[] =
   {  1,  5,  515, FLAT, MONS_QUICKSILVER_OOZE },
   {  1,  5,  515, FLAT, MONS_SHINING_EYE },
   {  1,  5,  200, FLAT, MONS_GOLDEN_EYE },
+  {  1,  5,  200, FLAT, MONS_FORMLESS_JELLYFISH },
   {  1,  8,  300, SEMI, MONS_EYE_OF_DEVASTATION },
   {  1,  8,  390, SEMI, MONS_GREAT_ORB_OF_EYES },
   {  2,  5,  100, RISE, MONS_GLOWING_ORANGE_BRAIN },
@@ -490,8 +492,8 @@ static const vector<pop_entry> population[] =
   {  1,  4,  325, RISE, MONS_GREAT_ORB_OF_EYES },
   {  1,  4,   50, FLAT, MONS_GLOWING_ORANGE_BRAIN },
   {  1,  4,   50, RISE, MONS_GLOWING_ORANGE_BRAIN },
-  {  1,  4,  150, FLAT, MONS_VERY_UGLY_THING },
-  {  1,  4,  100, RISE, MONS_VERY_UGLY_THING },
+  {  1,  4,  150, FLAT, MONS_FORMLESS_JELLYFISH },
+  {  1,  4,  100, RISE, MONS_FORMLESS_JELLYFISH },
   {  1,  4,  350, FLAT, MONS_WIZARD },
   {  1,  4,  350, RISE, MONS_WIZARD },
   {  1,  4,   75, FLAT, MONS_NECROMANCER },
@@ -1271,14 +1273,13 @@ COMPILE_CHECK(ARRAYSZ(population_water) == NUM_BRANCHES);
   {  1,  27,  100, FLAT, MONS_FIRE_BAT },\
   {  1,  27,  100, FLAT, MONS_FIRE_ELEMENTAL },\
   {  1,  27,   50, FLAT, MONS_MOLTEN_GARGOYLE },\
-  {  1,  27,   50, FLAT, MONS_FIRE_VORTEX },\
   {  1,  27,  145, FLAT, MONS_LAVA_SNAKE },\
   {  1,  27,   15, FLAT, MONS_SALAMANDER },\
-  {  1,  27,  290, FLAT, MONS_NO_MONSTER },\
+  {  1,  27,  340, FLAT, MONS_NO_MONSTER },\
 }
 
 #define HELL_LAVA_POP {\
-  {  1,  8,   300, FALL, MONS_FIRE_VORTEX },\
+  {  1,  8,   300, FALL, MONS_NO_MONSTER }, \
   {  1,  7,    50, RISE, MONS_STOKER },\
   {  1,  7,    50, FLAT, MONS_CREEPING_INFERNO },\
   {  1,  7,   100, FLAT, MONS_NO_MONSTER },\
@@ -1289,7 +1290,6 @@ COMPILE_CHECK(ARRAYSZ(population_water) == NUM_BRANCHES);
 #define DEPTHS_LAVA_POP {\
   {  1,  6,   22, FALL, MONS_FIRE_ELEMENTAL },\
   {  1,  6,   22, FALL, MONS_FIRE_BAT },\
-  {  1,  6,   11, FALL, MONS_FIRE_VORTEX },\
   {  1,  6,   11, FALL, MONS_MOLTEN_GARGOYLE },\
   {  1,  6,   60, FLAT, MONS_SALAMANDER },\
   {  1,  8,   85, SEMI, MONS_SALAMANDER_MYSTIC },\
@@ -1302,9 +1302,9 @@ static const vector<pop_entry> population_lava[] =
 {
     { // Dungeon lava monsters
       {  7,  27,  145, FLAT, MONS_LAVA_SNAKE },
-      {  11, 27,  290, RISE, MONS_FIRE_ELEMENTAL },
+      {  11, 27,  360, RISE, MONS_FIRE_ELEMENTAL },
       {  11, 27,  145, RISE, MONS_MOLTEN_GARGOYLE },
-      {  11, 27,  145, RISE, MONS_FIRE_VORTEX },
+      {  11, 27,   75, RISE, MONS_NO_MONSTER },
       {  7,  27,  290, FLAT, MONS_NO_MONSTER },
     },
     GENERIC_LAVA_POP, // Temple

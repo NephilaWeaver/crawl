@@ -435,7 +435,7 @@ static void _catchup_monster_moves(monster* mon, int turns)
     if (!mon->alive())
         return;
 
-    // Ball lightning dissapates harmlessly out of LOS
+    // Ball lightning dissipates harmlessly out of LOS
     if (mon->type == MONS_BALL_LIGHTNING && mon->summoner == MID_PLAYER)
     {
         monster_die(*mon, KILL_RESET, NON_MONSTER);
@@ -471,7 +471,7 @@ static void _catchup_monster_moves(monster* mon, int turns)
         else
         {
             // handle expiration messages if the player was quick
-            // doing it this way so the mesages are kept consistent with
+            // doing it this way so the messages are kept consistent with
             // corresponding non-yred derived undead
             mon_enchant abj(ENCH_FAKE_ABJURATION, 0, 0, 1);
             mon->add_ench(abj);
@@ -501,7 +501,9 @@ static void _catchup_monster_moves(monster* mon, int turns)
     if (mon->asleep() || mon->paralysed())
         return;
 
-
+    // Don't shift towards timestepped players.
+    if (mon->target.origin())
+        return;
 
     const int mon_turns = (turns * mon->speed) / 10;
     const int moves = min(mon_turns, 50);
@@ -594,7 +596,7 @@ void monster::timeout_enchantments(int levels)
         case ENCH_FRIENDLY_BRIBED: case ENCH_CORROSION: case ENCH_GOLD_LUST:
         case ENCH_RESISTANCE: case ENCH_HEXED: case ENCH_IDEALISED:
         case ENCH_BOUND_SOUL: case ENCH_STILL_WINDS: case ENCH_DRAINED:
-        case ENCH_ANGUISH:
+        case ENCH_ANGUISH: case ENCH_FIRE_VULN: case ENCH_SPELL_CHARGED:
             lose_ench_levels(entry.second, levels);
             break;
 
@@ -694,6 +696,7 @@ void update_level(int elapsedTime)
 
     if (env.sanctuary_time)
     {
+        // XX this doesn't guarantee that the final FPROP will be removed?
         if (turns >= env.sanctuary_time)
             remove_sanctuary();
         else

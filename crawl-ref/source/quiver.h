@@ -108,6 +108,7 @@ namespace quiver
     bool is_autofight_combat_ability(ability_type ability);
     bool is_autofight_combat_spell(spell_type spell);
 
+    bool toss_validate_item(int selected, string *err=nullptr);
     shared_ptr<action> find_ammo_action();
     shared_ptr<action> ammo_to_action(int slot, bool force=false);
     shared_ptr<action> slot_to_action(int slot, bool force=false);
@@ -135,13 +136,13 @@ namespace quiver
 
         shared_ptr<action> next(int dir = 0, bool allow_disabled=true) const;
 
-        virtual bool set(const shared_ptr<action> n, bool _autoswitched=false);
+        virtual bool set(const shared_ptr<action> n);
         bool set(const action_cycler &other);
         bool replace(const shared_ptr<action> new_act);
         bool set_from_slot(int slot);
         bool cycle(int dir = 0, bool allow_disabled=true);
         bool clear();
-        void on_actions_changed(bool check_autoswitch=false);
+        void on_actions_changed();
         virtual void set_needs_redraw();
         shared_ptr<action> find_last_valid();
 
@@ -149,8 +150,6 @@ namespace quiver
         shared_ptr<action> do_target();
         virtual string fire_key_hints() const;
         virtual bool targeter_handles_key(command_type c) const;
-
-        bool autoswitched;
     protected:
         action_cycler(shared_ptr<action> init);
 
@@ -161,7 +160,7 @@ namespace quiver
 
     void choose(action_cycler &cur_quiver, bool allow_empty=true);
     bool set_to_quiver(shared_ptr<quiver::action> s, action_cycler &cur_quiver);
-    void on_actions_changed(bool check_autoswitch=false);
+    void on_actions_changed();
     void on_weapon_changed();
     void on_newchar();
 

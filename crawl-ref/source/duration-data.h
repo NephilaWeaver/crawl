@@ -394,10 +394,20 @@ static const duration_def duration_data[] =
       "You are firmly anchored to this plane.", D_DISPELLABLE,
       {{ "You are no longer firmly anchored in space." }}},
     { DUR_LOCKED_DOWN,
-      RED, "-Move",
-      "immobile", "",
+      RED, "Stuck",
+      "stuck", "",
       "You are magically locked in place.", D_DISPELLABLE,
       {{ "You are no longer locked in place." }}},
+    { DUR_NO_MOMENTUM,
+      RED, "-Move",
+      "immotile", "",
+      "You are unable to move around.", D_DISPELLABLE,
+      {{ "You are no longer robbed of momentum." }}},
+    { DUR_ENLIGHTENED,
+      BLUE, "Will+",
+      "enlightened", "",
+      "You are enlightened. (Will+)", D_DISPELLABLE,
+      {{ "Your enlightenment fades." }}},
     { DUR_TOXIC_RADIANCE,
       MAGENTA, "Toxic",
       "radiating poison", "toxic radiance",
@@ -576,7 +586,7 @@ static const duration_def duration_data[] =
     { DUR_BLINK_COOLDOWN,
       YELLOW, "-Blink",
       "on blink cooldown", "blink cooldown",
-      "You are unable to blink.", D_NO_FLAGS,
+      "You are unable to blink.", D_DISPELLABLE,
       {{ "You feel stable enough to blink again."}}},
     { DUR_ANIMATE_DEAD,
       MAGENTA, "Reap",
@@ -584,12 +594,11 @@ static const duration_def duration_data[] =
       "You are reanimating the dead.", D_DISPELLABLE | D_EXPIRES,
       {{ "Your reaping aura expires.", _end_animate_dead },
       { "Your reaping aura is weakening.", 1 }}, 6},
-    { DUR_CORPSE_ROT,
-      MAGENTA, "Rot",
-      "producing miasma", "corpse rot",
-      "You are producing miasma from the slain.", D_DISPELLABLE | D_EXPIRES,
-      {{ "Your miasmic aura fades." },
-      { "Your miasmic aura is weakening.", 1 }}, 6},
+    { DUR_SIPHON_COOLDOWN,
+      YELLOW, "-Siphon",
+      "on siphon cooldown", "siphon cooldown",
+      "You are unable to siphon essence.", D_NO_FLAGS,
+      {{ "You are ready to siphon essence again." }}},
 
     // The following are visible in wizmode only, or are handled
     // specially in the status lights and/or the % or @ screens.
@@ -653,6 +662,7 @@ static const duration_def duration_data[] =
           if (!you.duration[DUR_BRAINLESS] && !player_in_branch(BRANCH_GEHENNA))
               mprf(MSGCH_RECOVERY, "You can read scrolls again.");
       }}}},
+    { DUR_REVELATION, 0, "", "", "revelation", "", D_NO_FLAGS, {{""}}},
 
 #if TAG_MAJOR_VERSION == 34
     // And removed ones
@@ -701,5 +711,6 @@ static const duration_def duration_data[] =
     { DUR_MIRROR_DAMAGE, 0, "", "", "old injury mirror", "", D_NO_FLAGS},
     { DUR_SHAFT_IMMUNITY, 0, "", "", "old shaft immunity", "", D_NO_FLAGS, {{""}}},
     { DUR_EXCRUCIATING_WOUNDS, 0, "", "", "old excruciating wounds", "", D_NO_FLAGS },
+    { DUR_CORPSE_ROT, 0, "", "", "old corpse rot", "", D_NO_FLAGS },
 #endif
 };

@@ -190,13 +190,14 @@ define(function () {
         MAX_POISON  : [0x00800000, 0x10000000]
     });
 
-    // Threat level has 4 possibilities, so uses 3 bits.
+    // 5 mutually exclusive flags for threat level.
     fg_flags.exclusive_flags.push({
         mask       : [0, 0x60000000 | highbit],
         TRIVIAL    : [0, 0x20000000],
         EASY       : [0, 0x40000000],
         TOUGH      : [0, 0x60000000],
-        NASTY      : [0, highbit]
+        NASTY      : [0, highbit],
+        UNUSUAL    : [0, 0x60000000 | highbit],
     });
 
     // MDAM has 5 possibilities, so uses 3 bits.
@@ -247,11 +248,8 @@ define(function () {
     bg_flags.flags.KRAKEN_SE  = highbit;
     bg_flags.flags.KRAKEN_SW  = [0, 0x01];
 
-    // Eldritch tentacle overlays.
-    bg_flags.flags.ELDRITCH_NW = [0, 0x02];
-    bg_flags.flags.ELDRITCH_NE = [0, 0x04];
-    bg_flags.flags.ELDRITCH_SE = [0, 0x08];
-    bg_flags.flags.ELDRITCH_SW = [0, 0x10];
+    bg_flags.flags.RAMPAGE     = [0, 0x020];
+
     bg_flags.flags.LANDING     = [0, 0x200];
     bg_flags.flags.RAY_MULTI   = [0, 0x400];
     bg_flags.mask              = 0x0000FFFF;
@@ -279,7 +277,7 @@ define(function () {
     mf.NOSELECT         = 0x0001;
     mf.SINGLESELECT     = 0x0002;
     mf.MULTISELECT      = 0x0004;
-    mf.NO_SELECT_QTY    = 0x0008;
+    mf.SELECT_QTY       = 0x0008;
     mf.ANYPRINTABLE     = 0x0010;
     mf.SELECT_BY_PAGE   = 0x0020;
     mf.INIT_HOVER       = 0x0040;

@@ -77,9 +77,9 @@ static const char *conducts[] =
     "Kill Fast", "Banishment", "Spell Memorise", "Spell Cast",
     "Spell Practise", "Cannibalism", "Deliberate Mutation",
     "Cause Glowing", "Use Unclean", "Use Chaos", "Desecrate Orcish Remains",
-    "Kill Slime", "Kill Plant", "Was Hasty", "Attack In Sanctuary",
+    "Kill Slime", "Was Hasty", "Attack In Sanctuary",
     "Kill Artificial", "Exploration", "Seen Monster",
-    "Sacrificed Love", "Channel", "Hurt Foe", "Use Wizardly Item",
+    "Sacrificed Love", "Hurt Foe", "Use Wizardly Item",
 };
 COMPILE_CHECK(ARRAYSZ(conducts) == NUM_CONDUCTS);
 
@@ -120,7 +120,7 @@ static void _handle_piety_penance(int piety_change, int piety_denom,
 }
 
 /**
- * Whether good gods that you folow are offended by you attacking a specific
+ * Whether good gods that you follow are offended by you attacking a specific
  * holy monster.
  *
  * @param victim    The holy in question. (May be nullptr.)
@@ -383,10 +383,6 @@ static peeve_map divine_peeves[] =
     },
     // GOD_FEDHAS,
     {
-        { DID_KILL_PLANT, {
-            "you destroy plants", false,
-            1, 0
-        } },
         { DID_ATTACK_FRIEND, _on_attack_friend(nullptr) },
     },
     // GOD_CHEIBRIADOS,
@@ -409,12 +405,7 @@ static peeve_map divine_peeves[] =
     peeve_map(),
 #if TAG_MAJOR_VERSION == 34
     // GOD_PAKELLAS
-    {
-        { DID_CHANNEL, {
-            "you channel magical energy", true,
-            1, 1,
-        } },
-    },
+    peeve_map(),
 #endif
     // GOD_USKAYAW,
     peeve_map(),
@@ -573,7 +564,7 @@ static int _piety_bonus_for_holiness(mon_holy_type holiness)
  * @param god_is_good   Whether this is a good god.
  *                      (They don't scale piety with XL in the same way...?)
  * @param special       A special-case function.
- * @return              An appropropriate like_response.
+ * @return              An appropriate like_response.
  */
 static like_response _on_kill(const char* desc, mon_holy_type holiness,
                               bool god_is_good = false,
@@ -1149,7 +1140,7 @@ void did_hurt_conduct(conduct_type thing_done,
 /**
  * Will this god definitely be upset if you cast this spell?
  *
- * This is as opposed to a likelihood, such as TSO's relationship with PArrow.
+ * This is as opposed to a likelihood.
  * TODO: deduplicate with spl-cast.cc:_spellcasting_god_conduct
  *
  * @param spell the spell to be cast
@@ -1159,9 +1150,6 @@ void did_hurt_conduct(conduct_type thing_done,
 bool god_punishes_spell(spell_type spell, god_type god)
 {
     if (map_find(divine_peeves[god], DID_SPELL_CASTING))
-        return true;
-
-    if (god_loathes_spell(spell, god))
         return true;
 
     if (map_find(divine_peeves[god], DID_EVIL)

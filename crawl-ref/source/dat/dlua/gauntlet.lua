@@ -157,7 +157,7 @@ end
 -- @param custom_loot If non-nil, place this as a guaranteed loot item.
 function gauntlet_arena_item_setup(e, custom_loot)
     -- Replace all 'd' after the first with the unused 'X' glyph so we can more
-    -- easilly apply any custom replacement for those extra items.
+    -- easily apply any custom replacement for those extra items.
     e.nsubst("d = d / X")
 
     -- Redefine these item class glyphs to use no_pickup
@@ -383,9 +383,6 @@ tier1_gauntlet_arenas = {
     liquid = "lava",
   },
   {
-    second = {mons = "shapeshifter", min = 1, max = 3},
-  },
-  {
     first  = {mons = "flying skull band", min = 1, max = 1},
     plant  = "withered",
   },
@@ -407,7 +404,7 @@ tier1_gauntlet_arenas = {
   },
   {
     first  = {mons = "death scarab", min = 1, max = 1},
-    second = {mons = "spectre place:Lair:6", min = 1, max = 1},
+    second = {mons = "spectre place:Lair:$", min = 1, max = 1},
     liquid = "water",
     plant  = "withered",
   },
@@ -555,10 +552,6 @@ tier2_gauntlet_arenas = {
     plant  = "withered",
   },
   {
-    first  = {mons = "glowing shapeshifter", min = 1, max = 1},
-    second = {mons = "shapeshifter", min = 2, max = 3},
-  },
-  {
     first  = {mons = "apocalypse crab", min = 1, max = 1},
     plant  = "demonic",
   },
@@ -635,7 +628,7 @@ tier2_gauntlet_arenas = {
   },
   {
     second = {mons = "death scarab", min = 2, max = 2},
-    third  = {mons = "spectre place:Lair:6", min = 2, max = 4},
+    third  = {mons = "spectre place:Lair:$", min = 2, max = 4},
     liquid = "water",
     plant  = "withered",
   },

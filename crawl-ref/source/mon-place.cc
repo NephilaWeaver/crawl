@@ -274,26 +274,38 @@ static void _apply_ood(level_id &place)
     }
 }
 
+/**
+ * Rate at which random monsters spawn, with lower numbers making
+ * them spawn more often (5 or less causes one to spawn about every
+ * 5 turns). 0 stops random generation.
+ */
+static int _get_monster_spawn_rate()
+{
+    if (player_in_branch(BRANCH_ABYSS))
+        return 5 * (have_passive(passive_t::slow_abyss) ? 2 : 1);
+
+    if (player_on_orb_run())
+        return have_passive(passive_t::slow_orb_run) ? 36 : 18;
+
+    return 50;
+}
+
 //#define DEBUG_MON_CREATION
 
 /**
  * Spawn random monsters.
-
- * The spawn rate defaults to the current env.spawn_random_rate for the branch,
- * but is modified by whether the player is in the abyss and on what level, as
- * well as whether the player has the orb.
  */
 void spawn_random_monsters()
 {
     if (crawl_state.disables[DIS_SPAWNS])
         return;
 
-    if (crawl_state.game_is_arena()
-        || (crawl_state.game_is_sprint()
-            && player_in_connected_branch()
-            && you.chapter == CHAPTER_ORB_HUNTING)
-        // Spawns no longer occur outside the Orb run in connected branches.
-        || !player_on_orb_run() && player_in_connected_branch())
+    if (crawl_state.game_is_arena())
+        return;
+
+    if (!player_on_orb_run()
+        && !player_in_branch(BRANCH_ABYSS)
+        && !player_in_branch(BRANCH_PANDEMONIUM))
     {
         return;
     }
@@ -301,50 +313,10 @@ void spawn_random_monsters()
 #ifdef DEBUG_MON_CREATION
     mprf(MSGCH_DIAGNOSTICS, "in spawn_random_monsters()");
 #endif
-    int rate = env.spawn_random_rate;
-    if (!rate)
-    {
-#ifdef DEBUG_MON_CREATION
-        mprf(MSGCH_DIAGNOSTICS, "random monster gen turned off");
-#endif
-        return;
-    }
 
-    if (player_on_orb_run())
-        rate = have_passive(passive_t::slow_orb_run) ? 36 : 18;
-
-    if (player_in_branch(BRANCH_ABYSS))
-    {
-        if (!player_in_starting_abyss())
-            rate = 5;
-        if (have_passive(passive_t::slow_abyss))
-            rate *= 2;
-    }
-
+    const int rate = _get_monster_spawn_rate();
     if (!x_chance_in_y(5, rate))
         return;
-
-    // Orb spawns. Don't generate orb spawns in Abyss to show some mercy to
-    // players that get banished there on the orb run.
-    // ...except in the deep Abyss!
-    if (player_on_orb_run() && !player_in_branch(BRANCH_ABYSS)
-        || player_in_branch(BRANCH_ABYSS)
-           && you.depth > 5
-           && one_chance_in(10 / (you.depth - 5)))
-    {
-        dprf(DIAG_MONPLACE, "Placing monster, rate: %d, turns here: %d",
-             rate, env.turns_on_level);
-
-        mgen_data mg(WANDERING_MONSTER);
-        mg.proximity = PROX_CLOSE_TO_PLAYER;
-        mg.foe = MHITYOU;
-        // Don't count orb run spawns in the xp_by_level dump
-        mg.xp_tracking = XP_UNTRACKED;
-        mons_place(mg);
-        viewwindow();
-        update_screen();
-        return;
-    }
 
     mgen_data mg(WANDERING_MONSTER);
     if (player_in_branch(BRANCH_PANDEMONIUM)
@@ -353,6 +325,25 @@ void spawn_random_monsters()
     {
         mg.cls = env.mons_alloc[random2(PAN_MONS_ALLOC)];
         mg.flags |= MG_PERMIT_BANDS;
+    }
+
+    // Orb spawns. Don't generate orb spawns in Abyss to show some mercy to
+    // players that get banished there on the orb run.
+    if (player_on_orb_run() && !player_in_branch(BRANCH_ABYSS))
+    {
+        mg.proximity = PROX_CLOSE_TO_PLAYER;
+        mg.foe = MHITYOU;
+        // Don't count orb run spawns in the xp_by_level dump
+        mg.xp_tracking = XP_UNTRACKED;
+    }
+
+    // Deep Abyss can also do orbrun-style spawns in LOS.
+    if (player_in_branch(BRANCH_ABYSS)
+        && you.depth > 5
+        && one_chance_in(10 / (you.depth - 5)))
+    {
+        mg.proximity = PROX_CLOSE_TO_PLAYER;
+        mg.foe = MHITYOU;
     }
 
     mons_place(mg);
@@ -619,6 +610,16 @@ static bool _valid_monster_generation_location(mgen_data &mg)
     return _valid_monster_generation_location(mg, mg.pos);
 }
 
+static void _inherit_kmap(monster &mon, const actor *summoner)
+{
+    if (!summoner)
+        return;
+    const monster* monsum = summoner->as_monster();
+    if (!monsum || !monsum->has_originating_map())
+        return;
+    mon.props[MAP_KEY] = monsum->originating_map();
+}
+
 monster* place_monster(mgen_data mg, bool force_pos, bool dont_place)
 {
     rng::subgenerator monster_rng;
@@ -744,9 +745,7 @@ monster* place_monster(mgen_data mg, bool force_pos, bool dont_place)
     if (chose_ood_monster)
         mon->props[MON_OOD_KEY].get_bool() = true;
 
-    if (mg.needs_patrol_point()
-        || (mon->type == MONS_ALLIGATOR
-            && !testbits(mon->flags, MF_BAND_MEMBER)))
+    if (mg.needs_patrol_point())
     {
         mon->patrol_point = mon->pos();
 #ifdef DEBUG_PATHFIND
@@ -755,21 +754,19 @@ monster* place_monster(mgen_data mg, bool force_pos, bool dont_place)
 #endif
     }
 
-    if (player_in_branch(BRANCH_ABYSS) && !mg.summoner
-        && in_bounds(mon->pos())
-        && !(mg.extra_flags & MF_WAS_IN_VIEW)
-        && !cell_is_solid(mon->pos()))
+    if (player_in_branch(BRANCH_ABYSS)
+        && !mg.summoner
+        && !(mg.extra_flags & MF_WAS_IN_VIEW))
     {
-        big_cloud(CLOUD_TLOC_ENERGY, mon, mon->pos(), 3 + random2(3), 3, 3);
-    }
+        if (in_bounds(mon->pos()) && !cell_is_solid(mon->pos()))
+            big_cloud(CLOUD_TLOC_ENERGY, mon, mon->pos(), 3 + random2(3), 3, 3);
 
-    if (player_in_branch(BRANCH_ABYSS) && you.can_see(*mon)
+        if (you.can_see(*mon)
              && !crawl_state.generating_level
-             && !mg.summoner
-             && !crawl_state.is_god_acting()
-             && !(mon->flags & MF_WAS_IN_VIEW)) // is this possible?
-    {
-        mon->seen_context = SC_ABYSS;
+             && !crawl_state.is_god_acting())
+        {
+            mon->seen_context = SC_ABYSS;
+        }
     }
 
     // Now, forget about banding if the first placement failed, or there are
@@ -1182,19 +1179,6 @@ static monster* _place_monster_aux(const mgen_data &mg, const monster *leader,
     if (mg.cls == MONS_GLOWING_SHAPESHIFTER)
         mon->add_ench(ENCH_GLOWING_SHAPESHIFTER);
 
-    if ((mg.cls == MONS_TOADSTOOL
-         || mg.cls == MONS_PILLAR_OF_SALT
-         || mg.cls == MONS_BLOCK_OF_ICE)
-        && !mg.props.exists(MGEN_NO_AUTO_CRUMBLE))
-    {
-        // This enchantment is a timer that counts down until death.
-        // It should last longer than the lifespan of a corpse, to avoid
-        // spawning mushrooms in the same place over and over. Aside
-        // from that, the value is slightly randomised to avoid
-        // simultaneous die-offs of mushroom rings.
-        mon->add_ench(ENCH_SLOWLY_DYING);
-    }
-
     if (mg.cls == MONS_TWISTER || mg.cls == MONS_DIAMOND_OBELISK)
     {
         mon->props[POLAR_VORTEX_KEY].get_int() = you.elapsed_time;
@@ -1301,7 +1285,7 @@ static monster* _place_monster_aux(const mgen_data &mg, const monster *leader,
             give_weapon(mon, place.absdepth());
 
         unwind_var<int> save_speedinc(mon->speed_increment);
-        mon->wield_melee_weapon(MB_FALSE);
+        mon->wield_melee_weapon(false);
     }
 
     if (mon->type == MONS_SLIME_CREATURE && mon->blob_size > 1)
@@ -1350,6 +1334,7 @@ static monster* _place_monster_aux(const mgen_data &mg, const monster *leader,
         mon->mark_summoned(mg.abjuration_duration,
                            mg.summon_type != SPELL_TUKIMAS_DANCE,
                            mg.summon_type);
+        _inherit_kmap(*mon, mg.summoner);
 
         if (mg.summon_type > 0 && mg.summoner)
         {
@@ -1576,6 +1561,12 @@ static bool _mc_too_slow_for_zombies(monster_type mon)
     return mons_class_zombie_base_speed(mons_species(mon)) < BASELINE_DELAY;
 }
 
+static bool _mc_bad_wretch(monster_type mon)
+{
+    // goofy on-death effect - probably other things could go here too
+    return mon == MONS_SPRIGGAN_DRUID;
+}
+
 /**
  * Pick a local monster type that's suitable for turning into a corpse.
  *
@@ -1593,7 +1584,7 @@ monster_type pick_local_corpsey_monster(level_id place)
 monster_type pick_local_zombifiable_monster(level_id place,
                                             monster_type cs,
                                             const coord_def& pos,
-                                            bool for_corpse)
+                                            bool for_wretch)
 {
     const bool really_in_d = place.branch == BRANCH_DUNGEON;
 
@@ -1615,8 +1606,9 @@ monster_type pick_local_zombifiable_monster(level_id place,
     place.depth = min(place.depth, branch_zombie_cap(place.branch));
     place.depth = max(1, place.depth);
 
-    const bool need_veto = really_in_d && !for_corpse;
-    mon_pick_vetoer veto = need_veto ? _mc_too_slow_for_zombies : nullptr;
+    mon_pick_vetoer veto = for_wretch ? _mc_bad_wretch :
+                           really_in_d ? _mc_too_slow_for_zombies
+                                        : nullptr;
 
     // try to grab a proper zombifiable monster
     monster_type mt = picker.pick_with_veto(zombie_population(place.branch),
@@ -1849,6 +1841,9 @@ static const map<monster_type, band_set> bands_by_leader = {
     { MONS_ALLIGATOR,       { { 5, 0, []() {
         return !player_in_branch(BRANCH_LAIR); }},
                                   {{ BAND_ALLIGATOR, {1, 2} }}}},
+    { MONS_FORMLESS_JELLYFISH, { { 0, 0, []() {
+        return player_in_branch(BRANCH_SLIME); }},
+                                  {{ BAND_JELLYFISH, {1, 3} }}}},
     { MONS_POLYPHEMUS,      { {}, {{ BAND_POLYPHEMUS, {3, 6}, true }}}},
     { MONS_HARPY,           { {}, {{ BAND_HARPIES, {2, 5} }}}},
     { MONS_SALTLING,        { {}, {{ BAND_SALTLINGS, {2, 4} }}}},
@@ -1959,6 +1954,7 @@ static const map<monster_type, band_set> bands_by_leader = {
     { MONS_EIDOLON, { {0, 0, []() { return player_in_hell(); }},
                                    {{ BAND_SPECTRALS, {2, 6}, true} }}},
     { MONS_GRUNN,            { {}, {{ BAND_DOOM_HOUNDS, {2, 4}, true }}}},
+    { MONS_NORRIS,         { {}, {{ BAND_SKYSHARKS, {2, 5}, true }}}},
 
     // special-cased band-sizes
     { MONS_SPRIGGAN_DRUID,  { {3}, {{ BAND_SPRIGGAN_DRUID, {0, 1}, true }}}},
@@ -2083,7 +2079,7 @@ static band_type _choose_band(monster_type mon_type, int *band_size_p,
 }
 
 /// a weighted list of possible monsters for a given band slot.
-typedef vector<pair<monster_type, int>> member_possibilites;
+typedef vector<pair<monster_type, int>> member_possibilities;
 
 /**
  * For each band type, a list of weighted lists of monsters that can appear
@@ -2102,7 +2098,7 @@ typedef vector<pair<monster_type, int>> member_possibilites;
  * the third, fourth, etc monsters will either be MONS_C or MONS_D with equal
  * likelihood.
  */
-static const map<band_type, vector<member_possibilites>> band_membership = {
+static const map<band_type, vector<member_possibilities>> band_membership = {
     { BAND_HOGS,                {{{MONS_HOG, 1}}}},
     { BAND_YAKS,                {{{MONS_YAK, 1}}}},
     { BAND_FAUNS,               {{{MONS_FAUN, 1}}}},
@@ -2130,6 +2126,7 @@ static const map<band_type, vector<member_possibilites>> band_membership = {
     { BAND_JIANGSHI,            {{{MONS_JIANGSHI, 1}}}},
     { BAND_LINDWURMS,           {{{MONS_LINDWURM, 1}}}},
     { BAND_ALLIGATOR,           {{{MONS_ALLIGATOR, 1}}}},
+    { BAND_JELLYFISH,           {{{MONS_FORMLESS_JELLYFISH, 1}}}},
     { BAND_DEATH_YAKS,          {{{MONS_DEATH_YAK, 1}}}},
     { BAND_GREEN_RATS,          {{{MONS_RIVER_RAT, 1}}}},
     { BAND_BLINK_FROGS,         {{{MONS_BLINK_FROG, 1}}}},
@@ -2419,6 +2416,8 @@ static const map<band_type, vector<member_possibilites>> band_membership = {
                                   {MONS_DEMONSPAWN_BLACK_SUN, 1}}}},
     // for Grunn
     { BAND_DOOM_HOUNDS,         {{{MONS_DOOM_HOUND, 1}}}},
+    // for Norris
+    { BAND_SKYSHARKS,           {{{MONS_SKYSHARK, 1}}}},
 };
 
 /**

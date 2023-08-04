@@ -317,7 +317,7 @@ function choose_mset_3(e)
                anaconda w:5 / guardian serpent")
 -- Lair
   elseif rnd < 19 then
-    e.kmons("1 =  place:Lair:2 / place:Lair:4 / place:Lair:$ w:5")
+    e.kmons("1 =  place:Lair:1 / place:Lair:3 / place:Lair:$ w:5")
 -- Spider
   elseif rnd < 24 then
     e.kmons("1 = place:Spider:$ w:70 / hornet")
@@ -732,7 +732,9 @@ KITEM:    B = plate armour mundane ident:all plus:5, \
               crystal plate armour mundane ident:all plus:5
 KITEM:    C = buckler mundane ident:all plus:3, \
               kite shield mundane ident:all plus:3, \
-              tower shield mundane ident:all plus:3
+              tower shield mundane ident:all plus:3, \
+              orb ego:guile, \
+              orb ego:mayhem
 KITEM:    D = broad axe mundane ident:all plus:5, \
               battleaxe mundane ident:all plus:5, \
               executioner's axe mundane ident:all plus:5
@@ -754,6 +756,7 @@ KITEM:    J = hand crossbow mundane ident:all plus:5, \
               arbalest mundane ident:all plus:5, \
               triple crossbow mundane ident:all plus:5, \
               shortbow mundane ident:all plus:5, \
+              orcbow mundane ident:all plus:5, \
               longbow mundane ident:all plus:5, \
               sling mundane ident:all plus:5
 KITEM:    K = potion of curing q:9 ident:all, \
@@ -797,7 +800,7 @@ KITEM:    T = storm_bow ident:all, \
               plutonium_sword ident:all, \
               devastator ident:all, \
               firestarter ident:all
-KITEM:    S = lightning rod ident:all
+KITEM:    S = beast talisman, maw talisman, blade talisman, serpent talisman
 KFEAT:    ^ = granite_statue
 KFEAT:    & = granite_statue
 COLOUR:   & = magenta

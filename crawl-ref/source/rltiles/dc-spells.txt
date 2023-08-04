@@ -3,6 +3,7 @@ airstrike AIRSTRIKE
 chain_lightning CHAIN_LIGHTNING
 conjure_ball_lightning CONJURE_BALL_LIGHTNING
 lightning_bolt LIGHTNING_BOLT
+arcjolt ARCJOLT
 maxwells MAXWELLS_COUPLING
 repel_missiles REPEL_MISSILES
 shock SHOCK
@@ -19,9 +20,12 @@ dazzling_spray DAZZLING_SPRAY
 force_lance FORCE_LANCE
 fulminant_prism FULMINANT_PRISM
 searing_ray SEARING_RAY
+momentum_strike MOMENTUM_STRIKE
+irradiate IRRADIATE
 
 %sdir gui/spells/earth
 iron_shot IRON_SHOT
+ledas_unmaking LEDAS_UNMAKING
 dig DIG
 lees_rapid_deconstruction LEES_RAPID_DECONSTRUCTION
 lehudibs_crystal_spear LEHUDIBS_CRYSTAL_SPEAR
@@ -53,10 +57,9 @@ violent_unravelling VIOLENT_UNRAVELLING
 %sdir gui/spells/fire
 bolt_of_fire BOLT_OF_FIRE
 bolt_of_magma BOLT_OF_MAGMA
-conjure_flame CONJURE_FLAME
 fire_storm FIRE_STORM
 fireball FIREBALL
-flame_tongue FLAME_TONGUE
+volatile_blastmotes BLASTMOTE
 ignite_poison IGNITE_POISON
 sticky_flame STICKY_FLAME
 throw_flame THROW_FLAME
@@ -66,6 +69,7 @@ starburst STARBURST
 foxfire FOXFIRE
 scorch SCORCH
 flame_wave FLAME_WAVE
+plasma_beam PLASMA_BEAM
 
 %sdir gui/spells/ice
 bolt_of_cold BOLT_OF_COLD
@@ -104,6 +108,7 @@ symbol_of_torment SYMBOL_OF_TORMENT
 vampiric_draining VAMPIRIC_DRAINING
 infestation INFESTATION
 borgnjors_vile_clutch BORGNJORS_VILE_CLUTCH
+kiss_of_death KISS_OF_DEATH
 
 %sdir gui/spells/poison
 alistairs_intoxication ALISTAIRS_INTOXICATION
@@ -151,14 +156,7 @@ portal_projectile PORTAL_PROJECTILE
 teleport_other TELEPORT_OTHER
 gravitas GRAVITAS
 manifold_assault MANIFOLD_ASSAULT
-
-%sdir gui/spells/transmutation
-blade_hands BLADE_HANDS
-beastly_appendage BEASTLY_APPENDAGE
-irradiate IRRADIATE
-storm_form STORM_FORM
-dragon_form DRAGON_FORM
-wereblood WEREBLOOD
+electric_charge ELECTRIC_CHARGE
 
 # item-based spells
 %sdir gui/spells/misc
@@ -168,6 +166,8 @@ cloud_cone CLOUD_CONE
 bolt_corrosive CORROSIVE_BOLT
 iceblast ICEBLAST
 bolt_energy ENERGY_BOLT
+# and wereblood
+wereblood WEREBLOOD
 
 # spells normally only used by monsters
 %back gui/spells/bg

@@ -11,6 +11,7 @@
 #include <queue>
 #include <sstream>
 
+#include "act-iter.h"
 #include "areas.h"
 #include "artefact.h"
 #include "attitude-change.h"
@@ -21,6 +22,7 @@
 #include "death-curse.h"
 #include "decks.h"
 #include "env.h"
+#include "fineff.h"
 #include "ghost.h"
 #include "god-abil.h"
 #include "god-passive.h" // shadow_monster
@@ -274,10 +276,10 @@ static bool _tso_retribution()
     return true;
 }
 
-static void _zin_remove_good_mutations()
+static bool _zin_remove_good_mutations()
 {
     if (!you.how_mutated())
-        return;
+        return true; // This was checked in _zin_retribution().
 
     const god_type god = GOD_ZIN;
     bool success = false;
@@ -286,12 +288,12 @@ static void _zin_remove_good_mutations()
 
     bool failMsg = true;
 
-    for (int i = 7; i >= 0; --i)
+    int how_many = binomial(7, 75, 100); // same avg, var as old bernoullis
+    for (int i = how_many; i >= 0; --i)
     {
         // Ensure that only good mutations are removed.
-        if (i <= random2(10)
-            && delete_mutation(RANDOM_GOOD_MUTATION, _god_wrath_name(god),
-                               failMsg, false, true))
+        if (delete_mutation(RANDOM_GOOD_MUTATION, _god_wrath_name(god),
+                            failMsg, false, true))
         {
             success = true;
         }
@@ -301,6 +303,7 @@ static void _zin_remove_good_mutations()
 
     if (success && !you.how_mutated())
         simple_god_message(" rids your body of chaos!", god);
+    return success;
 }
 
 static bool _zin_retribution()
@@ -309,13 +312,17 @@ static bool _zin_retribution()
     const god_type god = GOD_ZIN;
 
     // If not mutated, do something else instead.
-    const int punishment = you.how_mutated() ? random2(6) : random2(4);
+    const int punishment = you.how_mutated() ? random2(6) : random2(4) + 2;
 
     switch (punishment)
     {
     case 0:
-    case 1:
-    case 2: // recital
+    case 1: // remove good mutations or deliberately fall through
+        if (_zin_remove_good_mutations())
+            break;
+    case 2:
+    case 3:
+    case 4: // recital
         simple_god_message(" recites the Axioms of Law to you!", god);
         switch (random2(3))
         {
@@ -330,13 +337,9 @@ static bool _zin_retribution()
             return false;
         }
         break;
-    case 3: // noisiness
+    case 5: // noisiness
         simple_god_message(" booms out: \"Turn to the light! REPENT!\"", god);
         noisy(25, you.pos()); // same as scroll of noise
-        break;
-    case 4:
-    case 5: // remove good mutations
-        _zin_remove_good_mutations();
         break;
     }
     return true;
@@ -387,11 +390,8 @@ static bool _cheibriados_retribution()
             dec_penance(god, 1); // and fall-through.
     // Medium tension
     case 2:
-        if (you.duration[DUR_SLOW] < 180 * BASELINE_DELAY)
-        {
-            mprf(MSGCH_WARN, "You feel the world leave you behind!");
-            slow_player(100);
-        }
+        mprf(MSGCH_WARN, "You feel the world leave you behind!");
+        slow_player(91 + random2(10));
         break;
     // Low/no tension; lose stats.
     case 1:
@@ -405,6 +405,49 @@ static bool _cheibriados_retribution()
     }
 
     return true;
+}
+
+void lucy_check_meddling()
+{
+    if (!have_passive(passive_t::wrath_banishment))
+        return;
+
+    vector<monster*> potential_banishees;
+    for (monster_near_iterator mi(you.pos(), LOS_NO_TRANS); mi; ++mi)
+    {
+        monster *mon = *mi;
+        if (!mon
+            || mon->attitude != ATT_HOSTILE
+            || mons_is_conjured(mon->type)
+            || mons_is_firewood(*mon))
+        {
+            continue;
+        }
+        potential_banishees.push_back(mon);
+    }
+    if (potential_banishees.empty())
+        return;
+
+    bool banished = false;
+    shuffle_array(begin(potential_banishees), end(potential_banishees));
+    for (monster *mon : potential_banishees)
+    {
+        // We might have banished a summoner and poofed its summons, etc.
+        if (invalid_monster(mon) || !mon->alive())
+            continue;
+        // 80% chance of banishing god wrath summons, 30% chance of banishing
+        // other creatures nearby. Lazily assume that any perma summoned mons
+        // is a god wrath summon.
+        if (x_chance_in_y(mon->is_perm_summoned() ? 8 : 3, 10))
+        {
+            if (!banished)
+            {
+                simple_god_message(" does not welcome meddling.");
+                banished = true;
+            }
+            mon->banish(&you);
+        }
+    }
 }
 
 static void _spell_retribution(monster* avatar, spell_type spell, god_type god,
@@ -530,7 +573,7 @@ static int _makhleb_num_greater_servants()
                            + random2(you.experience_level / 2);
 
     if (severity > 13)
-        return 2 + random2(you.experience_level / 5 - 2); // up to 6 at XL27
+        return 2 + random2((you.experience_level - 2) / 5); // up to 6 at XL27
     else if (severity > 7 && !one_chance_in(5))
         return 1;
     return 0;
@@ -791,11 +834,8 @@ static bool _trog_retribution()
 
         case 4:
         case 5:
-            if (you.duration[DUR_SLOW] < 180 * BASELINE_DELAY)
-            {
-                mprf(MSGCH_WARN, "You suddenly feel lethargic!");
-                slow_player(100);
-            }
+            mprf(MSGCH_WARN, "You suddenly feel lethargic!");
+            slow_player(91 + random2(10));
             break;
         }
     }
@@ -1024,9 +1064,10 @@ static void _lugonu_minion_retribution()
 
     // how many lesser minions should we try to summon?
     // if this is major wrath, summon a few minions; 0 below xl9, 0-3 at xl 27.
-    // otherwise, summon exactly (!) 1 + xl/7 minions, maxing at 4 at xl 21.
+    // otherwise, summon around 1 + xl/7 minions, maxing at 6 at xl 21.
     const int how_many = (major ? random2(you.experience_level / 9 + 1)
-                                : 1 + you.experience_level / 7);
+                                : max(random2(3) + you.experience_level / 7,
+                                      1));
 
     // did we successfully summon any minions? (potentially set true below)
     bool success = false;
@@ -1088,14 +1129,12 @@ static spell_type _vehumet_wrath_type()
     const int severity = min(random_range(1 + you.experience_level / 5,
                                           1 + you.experience_level / 3),
                              9);
-    // Mostly player-castable conjurations with a couple of additions.
     switch (severity)
     {
         case 1:
             return random_choose(SPELL_MAGIC_DART,
                                  SPELL_STING,
-                                 SPELL_SHOCK,
-                                 SPELL_FLAME_TONGUE);
+                                 SPELL_SHOCK);
         case 2:
             return random_choose(SPELL_THROW_FLAME,
                                  SPELL_THROW_FROST);
@@ -1228,7 +1267,7 @@ static void _jiyva_transform()
         you.transform_uncancellable = true;
 }
 /**
- * Make Jiyva contaminate tha player.
+ * Make Jiyva contaminate that player.
  */
 static void _jiyva_contaminate()
 {
@@ -1248,7 +1287,6 @@ static void _jiyva_summon_slimes()
         MONS_GREAT_ORB_OF_EYES,
         MONS_SHINING_EYE,
         MONS_GLOWING_ORANGE_BRAIN,
-        MONS_JELLY,
         MONS_ROCKSLIME,
         MONS_QUICKSILVER_OOZE,
         MONS_ACID_BLOB,
@@ -1935,7 +1973,7 @@ static int _wu_jian_summon_weapons()
         const int subtype = random_choose(WPN_DIRE_FLAIL, WPN_QUARTERSTAFF,
                                           WPN_BROAD_AXE, WPN_GREAT_SWORD,
                                           WPN_RAPIER, WPN_GLAIVE);
-        const int ego = random_choose(SPWPN_VORPAL, SPWPN_FLAMING,
+        const int ego = random_choose(SPWPN_HEAVY, SPWPN_FLAMING,
                                       SPWPN_FREEZING, SPWPN_ELECTROCUTION,
                                       SPWPN_SPEED);
 
@@ -2027,10 +2065,10 @@ static bool _ignis_shaft()
 
     simple_god_message(" burns the ground from beneath your feet!", GOD_IGNIS);
 
-    // This way, if you're wearing the rDislodge boots, the other Ignis wrath
-    // effects won't become more prevalent, encouraging players to boot-swap
-    // while under Ignis wrath.
-    ASSERT(you.resists_dislodge("falling") || you.do_shaft());
+    // player::do_shaft() already checks resist_dislodge, but the message is a
+    // bit worse.
+    if (!you.resists_dislodge("falling"))
+        you.do_shaft();
     return true;
 }
 
@@ -2190,8 +2228,7 @@ bool divine_retribution(god_type god, bool no_bonus, bool force)
     {
     // One in ten chance that Xom might do something good...
     case GOD_XOM:
-        xom_acts(abs(you.piety - HALF_MAX_PIETY),
-                 frombool(one_chance_in(10)));
+        xom_acts(abs(you.piety - HALF_MAX_PIETY), one_chance_in(10));
         break;
     case GOD_SHINING_ONE:   do_more = _tso_retribution(); break;
     case GOD_ZIN:           do_more = _zin_retribution(); break;
@@ -2233,6 +2270,8 @@ bool divine_retribution(god_type god, bool no_bonus, bool force)
         return false;
     }
 
+    lucy_check_meddling();
+
     if (no_bonus)
         return true;
 
@@ -2249,12 +2288,8 @@ bool divine_retribution(god_type god, bool no_bonus, bool force)
         }
         else
         {
-            if (you.duration[DUR_SLOW] < 180 * BASELINE_DELAY)
-            {
-                mprf(MSGCH_WARN, "The divine experience drains your vigour!");
-
-                slow_player(random2(20));
-            }
+            mprf(MSGCH_WARN, "The divine experience drains your vigour!");
+            slow_player(random2(20));
         }
     }
 
@@ -2353,5 +2388,6 @@ void gozag_incite(monster *mon)
     {
         mon->add_ench(ENCH_GOZAG_INCITE);
         view_update_at(mon->pos());
+        lugonu_meddle_fineff::schedule();
     }
 }

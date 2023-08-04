@@ -79,7 +79,7 @@ void maybe_melt_player_enchantments(beam_type flavour, int damage)
             if (!you.duration[DUR_ICEMAIL_DEPLETED])
             {
                 if (you.has_mutation(MUT_ICEMAIL))
-                    mprf(MSGCH_DURATION, "Your icy defenses dissipate!");
+                    mprf(MSGCH_DURATION, "Your icy defences dissipate!");
                 else
                     mprf(MSGCH_DURATION, "Your condensation shield dissipates!");
             }
@@ -311,7 +311,8 @@ void expose_player_to_element(beam_type flavour, int strength, bool slow_cold_bl
     qazlal_element_adapt(flavour, strength);
 
     if (flavour == BEAM_COLD && slow_cold_blooded
-        && you.get_mutation_level(MUT_COLD_BLOODED)
+        && (you.get_mutation_level(MUT_COLD_BLOODED)
+            || you.form == transformation::anaconda)
         && you.res_cold() <= 0 && coinflip())
     {
         you.slow_down(0, strength);
@@ -345,10 +346,9 @@ void lose_level()
     calc_hp();
     calc_mp();
 
-    char buf[200];
-    sprintf(buf, "HP: %d/%d MP: %d/%d",
-            you.hp, you.hp_max, you.magic_points, you.max_magic_points);
-    take_note(Note(NOTE_XP_LEVEL_CHANGE, you.experience_level, 0, buf));
+    take_note(Note(NOTE_XP_LEVEL_CHANGE, you.experience_level, 0,
+        make_stringf("HP: %d/%d MP: %d/%d",
+                you.hp, you.hp_max, you.magic_points, you.max_magic_points)));
 
     you.redraw_title = true;
     you.redraw_experience = true;
@@ -714,15 +714,19 @@ static void _deteriorate(int dam)
     }
 }
 
+int corrosion_chance(int sources)
+{
+    return 3 * sources;
+}
+
 /**
  * Maybe corrode the player after taking damage if they're wearing *Corrode.
  **/
 static void _maybe_corrode()
 {
     int corrosion_sources = you.scan_artefacts(ARTP_CORRODE);
-    int degree = binomial(corrosion_sources, 3);
-    if (degree > 0)
-        you.corrode_equipment("Your corrosive artefact", degree);
+    if (x_chance_in_y(corrosion_chance(corrosion_sources), 100))
+        you.corrode_equipment("Your corrosive artefact");
 }
 
 /**
@@ -731,7 +735,7 @@ static void _maybe_corrode()
 static void _maybe_slow()
 {
     int slow_sources = you.scan_artefacts(ARTP_SLOW);
-    for (int degree = binomial(slow_sources, 1); degree > 0; degree--)
+    if (x_chance_in_y(slow_sources, 100))
         slow_player(10 + random2(5));
 }
 
@@ -768,14 +772,25 @@ static void _wizard_restore_life()
 }
 #endif
 
+int outgoing_harm_amount(int levels)
+{
+    return 15 * (levels + 1);
+}
+
+int incoming_harm_amount(int levels)
+{
+    return 10 * (levels + 1);
+}
+
 static int _apply_extra_harm(int dam, mid_t source)
 {
     monster* damager = monster_by_mid(source);
-    // Don't check for monster amulet if there source isn't a monster
+    // +30% damage if opp has one level of harm, +45% with two
     if (damager && damager->extra_harm())
-        return dam * 13 / 10; // +30% damage when the opponent has harm
-    else if (you.extra_harm())
-        return dam * 6 / 5; // +20% damage when you have harm
+        return dam * (100 + outgoing_harm_amount(damager->extra_harm())) / 100;
+    // +20% damage if you have one level of harm, +30% with two
+    if (you.extra_harm())
+        return dam * (100 + incoming_harm_amount(you.extra_harm())) / 100;
 
     return dam;
 }
@@ -823,38 +838,6 @@ static bool _is_damage_threatening (int damage_fraction_of_hp, int mut_level)
                 || random2(100) > hp_fraction);
 }
 
-// Palentongas curl up after the first time they've been hit in a round.
-static void _consider_curling(kill_method_type death_type)
-{
-    if (!you.has_mutation(MUT_CURL)
-        || you.props[PALENTONGA_CURL_KEY].get_bool())
-    {
-        return;
-    }
-
-    switch (death_type)
-    {
-        case KILLED_BY_MONSTER:
-        case KILLED_BY_BEAM:
-        case KILLED_BY_DEATH_EXPLOSION:
-        case KILLED_BY_TRAP:
-        case KILLED_BY_BOUNCE:
-        case KILLED_BY_REFLECTION:
-        case KILLED_BY_DISINT:
-        case KILLED_BY_HEADBUTT:
-        case KILLED_BY_ROLLING:
-        case KILLED_BY_BEING_THROWN:
-        case KILLED_BY_COLLISION:
-            break;
-        default:
-            // stuff like poison, smiting, etc
-            return;
-    }
-
-    you.props[PALENTONGA_CURL_KEY] = true;
-    you.redraw_armour_class = true;
-}
-
 /** Hurt the player. Isn't it fun?
  *
  *  @param dam How much damage -- may be INSTANT_DEATH.
@@ -876,7 +859,7 @@ void ouch(int dam, kill_method_type death_type, mid_t source, const char *aux,
 
     int drain_amount = 0;
 
-    // Multiply damage if scarf of harm is in play
+    // Multiply damage if Harm is in play
     if (dam != INSTANT_DEATH)
         dam = _apply_extra_harm(dam, source);
 
@@ -909,8 +892,6 @@ void ouch(int dam, kill_method_type death_type, mid_t source, const char *aux,
     if (dam > 0 && dam < you.hp && death_type != KILLED_BY_POISON)
         you.check_awaken(500);
 
-    _consider_curling(death_type);
-
     const bool non_death = death_type == KILLED_BY_QUITTING
                         || death_type == KILLED_BY_WINNING
                         || death_type == KILLED_BY_LEAVING;
@@ -927,15 +908,13 @@ void ouch(int dam, kill_method_type death_type, mid_t source, const char *aux,
     {
         // death's door protects against everything but falling into
         // water/lava, Zot, excessive rot, leaving the dungeon, or quitting.
-        if (you.duration[DUR_DEATHS_DOOR])
+        // Likewise, dreamshard protects you until the start of your next turn.
+        if (you.duration[DUR_DEATHS_DOOR] || you.props.exists(DREAMSHARD_KEY))
             return;
         // the dreamshard necklace protects from any fatal blow or death source
-        // that death's door would protect from, plus a chance of activating on
-        // hits for more than 80% of a player's remaining hitpoints
-        // (but doesn't activate while in death's door)
+        // that death's door would protect from.
         else if (player_equip_unrand(UNRAND_DREAMSHARD_NECKLACE)
-                 && (dam >= you.hp
-                     || ((dam * 100) / you.hp) > 80 && coinflip()))
+                 && dam >= you.hp)
         {
             dreamshard_shatter();
             return;
@@ -989,7 +968,7 @@ void ouch(int dam, kill_method_type death_type, mid_t source, const char *aux,
             drain_mp(mp);
 
             // Wake players who took fatal damage exactly equal to current HP,
-            // but had it reduced below fatal threshhold by spirit shield.
+            // but had it reduced below fatal threshold by spirit shield.
             if (dam < you.hp)
                 you.check_awaken(500);
 
@@ -1149,7 +1128,8 @@ void ouch(int dam, kill_method_type death_type, mid_t source, const char *aux,
         if (!non_death)
             tutorial_death_message();
 
-        screen_end_game("");
+        // only quitting can lead to this?
+        screen_end_game("", game_exit::quit);
     }
 
     // Okay, so you're dead.
