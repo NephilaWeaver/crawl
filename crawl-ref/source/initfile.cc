@@ -729,6 +729,7 @@ const vector<GameOption*> game_options::build_options_list()
         new MultipleChoiceGameOption<game_type>(NEWGAME_NAME(type),
             GAME_TYPE_NORMAL,
             {{"normal", GAME_TYPE_NORMAL},
+             {"ironman", GAME_TYPE_IRONMAN},
              {"seeded", GAME_TYPE_CUSTOM_SEED},
              {"arena", GAME_TYPE_ARENA},
              {"sprint", GAME_TYPE_SPRINT},
