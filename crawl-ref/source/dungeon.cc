@@ -3761,10 +3761,8 @@ static bool _in_ironman_parent(branch_type branch)
 {
     vector<branch_type> parents = ironman_parents(branch);
     for (branch_type parent : parents)
-    {
         if (player_in_branch(parent))
             return true;
-    }
     return false;
 }
 
