@@ -604,9 +604,14 @@ private:
 public:
     static const FormFlux &instance() { static FormFlux inst; return inst; }
 
-    int contam_dam(bool random = true, bool max = false) const
+    int contam_dam(bool random = true, bool max = false) const override
     {
         return divided_scaling(FormScaling().Base(30).Scaling(30), random, max, 100);
+    }
+
+    int ev_bonus(bool max) const override
+    {
+        return scaling_value(FormScaling().Base(5).Scaling(5), false, max);
     }
 };
 
