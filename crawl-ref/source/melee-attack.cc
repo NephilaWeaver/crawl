@@ -452,7 +452,7 @@ void melee_attack::do_ooze_engulf()
 
 static void _apply_flux_contam(monster &m)
 {
-    const mon_enchant old_glow = m.get_ench(ENCH_GLOW);
+    const mon_enchant old_glow = m.get_ench(ENCH_CONTAM);
 
     if (old_glow.degree >= 2)
     {
@@ -470,11 +470,11 @@ static void _apply_flux_contam(monster &m)
                 return;
         }
         m.malmutate("");
-        m.del_ench(ENCH_GLOW, true);
+        m.del_ench(ENCH_CONTAM, true);
         return;
     }
 
-    m.add_ench(mon_enchant(ENCH_GLOW, 1, &you));
+    m.add_ench(mon_enchant(ENCH_CONTAM, 1, &you));
     if (!old_glow.degree)
         simple_monster_message(m, " begins to glow.");
     else
